@@ -4,134 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sovereign Fury — Chart Index</title>
-<style>
-  :root{
-    --wood:#241a10; --brass:#c99a45; --brass-d:#8a6a2a; --parch:#ece1c6; --parch2:#e2d4b2;
-    --line:#c9b98f; --ink:#2c2214; --ink2:#5c4e33; --muted:#7a6c4e;
-    --ui:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    --serif:"Iowan Old Style","Palatino Linotype","Palatino",Georgia,"Times New Roman",serif;
-    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-    --water:#7ea0c4; --water-d:#4d6f93;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:#150f08;color:var(--ink);font-family:var(--body)}
-  .app{height:100%;display:flex;flex-direction:column}
-  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:0 0 auto;
-       background:linear-gradient(#2f2314,#241a10);padding:8px 14px;
-       border-bottom:2px solid var(--brass-d);color:#f0d9a0}
-  .title{font-family:var(--serif);font-size:16px;font-weight:600}
-  .tag{font:700 9px var(--ui);letter-spacing:.14em;text-transform:uppercase;color:#241a10;
-       background:var(--brass);border-radius:3px;padding:3px 7px}
-  .sub{font:12px var(--serif);color:#cdbf98;font-style:italic}
-  .spacer{margin-left:auto}
-  .btn{background:#3a2c18;border:1px solid #5a4826;color:#e7dcc0;border-radius:5px;height:26px;padding:0 11px;
-       cursor:pointer;font-size:12px;font-family:var(--ui)}
-  .btn:hover{border-color:var(--brass);color:#f6e6b8}
-  .stagewrap{flex:1;position:relative;min-height:0;background:#d8cba8}
-  #cv{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
-  #cv.panning{cursor:grabbing}
-  .status{display:flex;align-items:center;gap:18px;flex-wrap:wrap;flex:0 0 auto;
-          background:linear-gradient(#2f2314,#241a10);border-top:2px solid var(--brass-d);
-          padding:6px 14px;color:#ece1c6;font:12px var(--ui)}
-  .status b{color:#f0d9a0}
-  .muted{color:#9c8f72}
-</style>
 </head>
 <body>
-<div class="app">
-  <div class="bar">
-    <div class="title">Sovereign Fury — Chart Index</div>
-    <span class="tag">True scale</span>
-    <span class="tag">176 yd/hex</span>
-    <span class="sub">Entire theatre · New Mexico to Boston · drag to pan · wheel to zoom</span>
-    <div class="spacer"></div>
-    <button class="btn" id="fitall" type="button">Fit all</button>
-    <button class="btn" id="fitdc" type="button">Fit Washington block</button>
-    <button class="btn" id="fityt" type="button">Yorktown</button>
-    <button class="btn" id="fitpr" type="button">Port Royal</button>
-    <button class="btn" id="zoomin" type="button">＋</button>
-    <button class="btn" id="zoomout" type="button">－</button>
-  </div>
-  <div class="stagewrap"><canvas id="cv"></canvas></div>
-  <div class="status">
-    <span id="statplace"><b>Place</b> —</span>
-    <span id="statsize"><b>Size</b> —</span>
-    <span id="stathex"><b>Hexes</b> —</span>
-    <span class="spacer muted" id="statscale">176 yd/hex · 1 hex = 0.10 mi</span>
-  </div>
-</div>
 <script>
-(function(){
-  var SQRT3=Math.sqrt(3);
-  var YDS=176, HEX_MI=YDS/1760, ROW_MI=YDS*1.5/SQRT3/1760;
-  var PLATE_MI_W=103/100*15840/1609.344;
-  var PLATE_MI_H=99/100*15840/1609.344;
-  var LAT0=34.20, LON0=-89.50;
-  var MI_PER_DEG_LAT=69.172;
-  var MIN_SCALE=0.22, MAX_SCALE=420;
-  function miPerDegLon(lat){ return MI_PER_DEG_LAT*Math.cos(lat*Math.PI/180); }
-  function lonlatToWorld(lon, lat){
-    return {x:(lon-LON0)*miPerDegLon((lat+LAT0)/2), y:(lat-LAT0)*MI_PER_DEG_LAT};
-  }
-  function worldToLonlat(x, y){
-    var lat=LAT0+y/MI_PER_DEG_LAT;
-    return {lon:LON0+x/miPerDegLon((lat+LAT0)/2), lat:lat};
-  }
-  function boxFromCenter(lon, lat, miW, miH){
-    var dLon=miW/2/miPerDegLon(lat), dLat=miH/2/MI_PER_DEG_LAT;
-    return {w:lon-dLon, e:lon+dLon, s:lat-dLat, n:lat+dLat};
-  }
-  function plateBox(westLon, southLat){
-    return {
-      w:westLon,
-      s:southLat,
-      e:westLon+PLATE_MI_W/miPerDegLon(southLat+PLATE_MI_H/2/MI_PER_DEG_LAT),
-      n:southLat+PLATE_MI_H/MI_PER_DEG_LAT
-    };
-  }
-
-  /* DC-00 sits on the Boschke / District block. Neighbors share edges. */
-  var DC=plateBox(-77.105, 38.792);
-  var FC={w:DC.w- (DC.e-DC.w), e:DC.w, s:DC.s, n:DC.n};
-  var OA01={w:DC.w, e:DC.e, n:DC.s, s:DC.s-(DC.n-DC.s)};
-  var OA02={w:FC.w, e:FC.e, n:FC.s, s:FC.s-(FC.n-FC.s)};
-
-  /* Yorktown and Port Royal: compact 176 yd/hex sites, true ground size. */
-  var YT=boxFromCenter(-76.5085, 37.2389, 3.20, 2.40);
-  var PR=boxFromCenter(-77.1910, 38.1700, 2.00, 1.60);
-
-  function sheetHexes(b){
-    var midLat=(b.n+b.s)/2;
-    var miW=(b.e-b.w)*miPerDegLon(midLat);
-    var miH=(b.n-b.s)*MI_PER_DEG_LAT;
-    return {cols:Math.max(1, Math.round(miW/HEX_MI)), rows:Math.max(1, Math.round(miH/ROW_MI)), miW:miW, miH:miH};
-  }
-
-  var SHEETS=[
-    {id:"DC-00", name:"Washington", kind:"plate", box:DC, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"FC-00", name:"Falls Church", kind:"plate", box:FC, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"OA-01", name:"Alexandria South", kind:"plate", box:OA01, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"OA-02", name:"Springfield", kind:"plate", box:OA02, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"YT-00", name:"Yorktown", kind:"site", box:YT, href:null, fill:"rgba(138,51,32,.28)"},
-    {id:"PR-00", name:"Port Royal", kind:"site", box:PR, href:null, fill:"rgba(138,51,32,.28)"}
-  ];
-  SHEETS.forEach(function(s){ s.hex=sheetHexes(s.box); });
-
-  var PLACES=[
-    {name:"Santa Fe", lon:-105.9378, lat:35.6870, z:0},
-    {name:"Chicago", lon:-87.6298, lat:41.8781, z:0},
-    {name:"Boston", lon:-71.0589, lat:42.3601, z:0},
-    {name:"Brownsville", lon:-97.4975, lat:25.9017, z:0},
-    {name:"Key West", lon:-81.7799, lat:24.5551, z:0},
-    {name:"Washington", lon:-77.0369, lat:38.9072, z:0},
-    {name:"New Orleans", lon:-90.0715, lat:29.9511, z:0},
-    {name:"Richmond", lon:-77.4360, lat:37.5407, z:0},
-    {name:"St. Louis", lon:-90.1994, lat:38.6270, z:0},
-    {name:"Alexandria", lon:-77.0469, lat:38.8048, z:1.6},
-    {name:"Falls Church", lon:-77.1711, lat:38.8823, z:1.8},
-    {name:"Springfield", lon:-77.1872, lat:38.7893, z:2.2},
-    {name:"Fredericksburg", lon:-77.4605, lat:38.3032, z:0.6},
-    {name:"Port Royal", lon:-77.1910, lat:38.1700, z:0.4},
-    {name:"Yorktown", lon:-76.5085, lat:37.2389, z:0.4},
-    {name:"Fort Monroe", lon:-76.3080, lat:37.0037, z:0.5}
-  ];
+(async function(){
+  var n=11, i, parts=[];
+  for(i=0;i<n;i++) parts.push(await (await fetch("chunk-"+i+".txt")).text());
+  document.open();
+  document.write(parts.join(""));
+  document.close();
+})();
+</script>
+</body>
+</html>
