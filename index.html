@@ -4,8 +4,366 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sovereign Fury — Chart Index</title>
+<style>
+  :root{
+    --wood:#241a10; --brass:#c99a45; --brass-d:#8a6a2a; --parch:#ece1c6; --parch2:#e2d4b2;
+    --line:#c9b98f; --ink:#2c2214; --ink2:#5c4e33; --muted:#7a6c4e;
+    --ui:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --serif:"Iowan Old Style","Palatino Linotype","Palatino",Georgia,"Times New Roman",serif;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --water:#7ea0c4; --water-d:#4d6f93;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#150f08;color:var(--ink);font-family:var(--body)}
+  .app{height:100%;display:flex;flex-direction:column}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:0 0 auto;
+       background:linear-gradient(#2f2314,#241a10);padding:8px 14px;
+       border-bottom:2px solid var(--brass-d);color:#f0d9a0}
+  .title{font-family:var(--serif);font-size:16px;font-weight:600}
+  .tag{font:700 9px var(--ui);letter-spacing:.14em;text-transform:uppercase;color:#241a10;
+       background:var(--brass);border-radius:3px;padding:3px 7px}
+  .sub{font:12px var(--serif);color:#cdbf98;font-style:italic}
+  .spacer{margin-left:auto}
+  .btn{background:#3a2c18;border:1px solid #5a4826;color:#e7dcc0;border-radius:5px;height:26px;padding:0 11px;
+       cursor:pointer;font-size:12px;font-family:var(--ui)}
+  .btn:hover{border-color:var(--brass);color:#f6e6b8}
+  .stagewrap{flex:1;position:relative;min-height:0;background:#d8cba8}
+  #cv{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+  #cv.panning{cursor:grabbing}
+  .status{display:flex;align-items:center;gap:18px;flex-wrap:wrap;flex:0 0 auto;
+          background:linear-gradient(#2f2314,#241a10);border-top:2px solid var(--brass-d);
+          padding:6px 14px;color:#ece1c6;font:12px var(--ui)}
+  .status b{color:#f0d9a0}
+  .muted{color:#9c8f72}
+</style>
 </head>
 <body>
-<p>placeholder</p>
+<div class="app">
+  <div class="bar">
+    <div class="title">Sovereign Fury — Chart Index</div>
+    <span class="tag">True scale</span>
+    <span class="tag">176 yd/hex</span>
+    <span class="sub">Finished sheets in real places · drag to pan · wheel to zoom</span>
+    <div class="spacer"></div>
+    <button class="btn" id="fitall" type="button">Fit all</button>
+    <button class="btn" id="fitdc" type="button">Fit Washington block</button>
+    <button class="btn" id="fityt" type="button">Yorktown</button>
+    <button class="btn" id="fitpr" type="button">Port Royal</button>
+    <button class="btn" id="zoomin" type="button">＋</button>
+    <button class="btn" id="zoomout" type="button">－</button>
+  </div>
+  <div class="stagewrap"><canvas id="cv"></canvas></div>
+  <div class="status">
+    <span id="statplace"><b>Place</b> —</span>
+    <span id="statsize"><b>Size</b> —</span>
+    <span id="stathex"><b>Hexes</b> —</span>
+    <span class="spacer muted" id="statscale">176 yd/hex · 1 hex = 0.10 mi</span>
+  </div>
+</div>
+<script>
+(function(){
+  var SQRT3=Math.sqrt(3);
+  var YDS=176, HEX_MI=YDS/1760, ROW_MI=YDS*1.5/SQRT3/1760;
+  var PLATE_MI_W=103/100*15840/1609.344;
+  var PLATE_MI_H=99/100*15840/1609.344;
+  var LAT0=38.20, LON0=-77.05;
+  var MI_PER_DEG_LAT=69.172;
+  function miPerDegLon(lat){ return MI_PER_DEG_LAT*Math.cos(lat*Math.PI/180); }
+  function lonlatToWorld(lon, lat){
+    return {x:(lon-LON0)*miPerDegLon((lat+LAT0)/2), y:(lat-LAT0)*MI_PER_DEG_LAT};
+  }
+  function boxFromCenter(lon, lat, miW, miH){
+    var dLon=miW/2/miPerDegLon(lat), dLat=miH/2/MI_PER_DEG_LAT;
+    return {w:lon-dLon, e:lon+dLon, s:lat-dLat, n:lat+dLat};
+  }
+  function plateBox(westLon, southLat){
+    return {
+      w:westLon,
+      s:southLat,
+      e:westLon+PLATE_MI_W/miPerDegLon(southLat+PLATE_MI_H/2/MI_PER_DEG_LAT),
+      n:southLat+PLATE_MI_H/MI_PER_DEG_LAT
+    };
+  }
+  var DC=plateBox(-77.105, 38.792);
+  var FC={w:DC.w- (DC.e-DC.w), e:DC.w, s:DC.s, n:DC.n};
+  var OA01={w:DC.w, e:DC.e, n:DC.s, s:DC.s-(DC.n-DC.s)};
+  var OA02={w:FC.w, e:FC.e, n:FC.s, s:FC.s-(FC.n-FC.s)};
+  var YT=boxFromCenter(-76.5085, 37.2389, 3.20, 2.40);
+  var PR=boxFromCenter(-77.1910, 38.1700, 2.00, 1.60);
+  function sheetHexes(b){
+    var midLat=(b.n+b.s)/2;
+    var miW=(b.e-b.w)*miPerDegLon(midLat);
+    var miH=(b.n-b.s)*MI_PER_DEG_LAT;
+    return {cols:Math.max(1, Math.round(miW/HEX_MI)), rows:Math.max(1, Math.round(miH/ROW_MI)), miW:miW, miH:miH};
+  }
+  var SHEETS=[
+    {id:"DC-00", name:"Washington", kind:"plate", box:DC, href:null, fill:"rgba(201,154,69,.22)"},
+    {id:"FC-00", name:"Falls Church", kind:"plate", box:FC, href:null, fill:"rgba(201,154,69,.22)"},
+    {id:"OA-01", name:"Alexandria South", kind:"plate", box:OA01, href:null, fill:"rgba(201,154,69,.22)"},
+    {id:"OA-02", name:"Springfield", kind:"plate", box:OA02, href:null, fill:"rgba(201,154,69,.22)"},
+    {id:"YT-00", name:"Yorktown", kind:"site", box:YT, href:null, fill:"rgba(138,51,32,.28)"},
+    {id:"PR-00", name:"Port Royal", kind:"site", box:PR, href:null, fill:"rgba(138,51,32,.28)"}
+  ];
+  SHEETS.forEach(function(s){ s.hex=sheetHexes(s.box); });
+  var PLACES=[
+    {name:"Washington", lon:-77.0369, lat:38.9072, z:0},
+    {name:"Alexandria", lon:-77.0469, lat:38.8048, z:1.6},
+    {name:"Falls Church", lon:-77.1711, lat:38.8823, z:1.8},
+    {name:"Springfield", lon:-77.1872, lat:38.7893, z:2.2},
+    {name:"Fredericksburg", lon:-77.4605, lat:38.3032, z:0.6},
+    {name:"Port Royal", lon:-77.1910, lat:38.1700, z:0.4},
+    {name:"Richmond", lon:-77.4360, lat:37.5407, z:0},
+    {name:"Yorktown", lon:-76.5085, lat:37.2389, z:0.4},
+    {name:"Fort Monroe", lon:-76.3080, lat:37.0037, z:0.5}
+  ];
+  var WATER=[
+    {name:"Potomac", pts:[[-77.22,39.00],[-77.14,38.97],[-77.12,38.94],[-77.06,38.93],[-77.05,38.90],[-77.04,38.86],[-77.03,38.83],[-77.04,38.80],[-77.05,38.76],[-77.08,38.71],[-77.07,38.66],[-77.10,38.58],[-77.16,38.48],[-77.18,38.38],[-77.12,38.28],[-77.02,38.18],[-76.86,38.08],[-76.60,38.02],[-76.34,37.96]]},
+    {name:"Rappahannock", pts:[[-77.72,38.52],[-77.58,38.42],[-77.50,38.34],[-77.46,38.30],[-77.38,38.24],[-77.27,38.20],[-77.191,38.170],[-77.08,38.12],[-76.92,38.02],[-76.68,37.88],[-76.42,37.64]]},
+    {name:"York", pts:[[-76.90,37.54],[-76.78,37.46],[-76.70,37.40],[-76.60,37.32],[-76.5085,37.239],[-76.40,37.23],[-76.28,37.22]]},
+    {name:"James", pts:[[-77.45,37.54],[-77.38,37.50],[-77.28,37.42],[-77.12,37.32],[-76.92,37.22],[-76.70,37.12],[-76.48,37.02],[-76.30,36.96]]}
+  ];
+  var BAY=[[-76.34,37.96],[-76.18,37.80],[-76.12,37.55],[-76.08,37.35],[-76.02,37.15],[-76.10,37.00],[-76.30,36.96],[-76.48,37.02],[-76.28,37.22],[-76.40,37.23],[-76.5085,37.239],[-76.60,37.32],[-76.70,37.40],[-76.42,37.64],[-76.68,37.88],[-76.92,38.02],[-76.60,38.02],[-76.34,37.96]];
+  var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+  var stage=cv.parentElement, dpr=Math.max(1, window.devicePixelRatio||1);
+  var cam={x:0,y:0,scale:8}, hover=null, panning=false, lastPan=null, panMoved=false;
+  function resize(){
+    var w=stage.clientWidth, h=stage.clientHeight;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    cv.style.width=w+"px"; cv.style.height=h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+  function worldToScreen(wx, wy){
+    return {x:(wx-cam.x)*cam.scale+stage.clientWidth/2, y:(cam.y-wy)*cam.scale+stage.clientHeight/2};
+  }
+  function screenToWorld(sx, sy){
+    return {x:cam.x+(sx-stage.clientWidth/2)/cam.scale, y:cam.y-(sy-stage.clientHeight/2)/cam.scale};
+  }
+  function sheetWorld(s){
+    var sw=lonlatToWorld(s.box.w, s.box.s), ne=lonlatToWorld(s.box.e, s.box.n);
+    return {x0:sw.x, y0:sw.y, x1:ne.x, y1:ne.y};
+  }
+  function zoomAt(sx, sy, factor){
+    var w=screenToWorld(sx,sy);
+    cam.scale=Math.max(1.2, Math.min(420, cam.scale*factor));
+    var w2=screenToWorld(sx,sy);
+    cam.x+=w.x-w2.x; cam.y+=w.y-w2.y;
+    draw();
+  }
+  function fitSheets(list, pad){
+    var i, b, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(i=0;i<list.length;i++){
+      b=sheetWorld(list[i]);
+      if(b.x0<x0) x0=b.x0; if(b.y0<y0) y0=b.y0;
+      if(b.x1>x1) x1=b.x1; if(b.y1>y1) y1=b.y1;
+    }
+    pad=pad==null?18:pad;
+    x0-=pad; y0-=pad; x1+=pad; y1+=pad;
+    var W=stage.clientWidth, H=stage.clientHeight;
+    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
+    cam.scale=Math.max(1.2, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    draw();
+  }
+  function hitSheet(sx, sy){
+    var w=screenToWorld(sx,sy), i, b, c, d, best=null, bestD=16;
+    for(i=SHEETS.length-1;i>=0;i--){
+      b=sheetWorld(SHEETS[i]);
+      if(w.x>=b.x0 && w.x<=b.x1 && w.y>=b.y0 && w.y<=b.y1) return SHEETS[i];
+    }
+    for(i=0;i<SHEETS.length;i++){
+      b=sheetWorld(SHEETS[i]);
+      c=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
+      d=Math.hypot(sx-c.x, sy-c.y);
+      if(d<bestD){ bestD=d; best=SHEETS[i]; }
+    }
+    return best;
+  }
+  function drawPath(pts, close){
+    var i, p, s;
+    ctx.beginPath();
+    for(i=0;i<pts.length;i++){
+      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
+      if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
+    }
+    if(close) ctx.closePath();
+  }
+  function hexPoly(cx, cy, r){
+    var i, a;
+    ctx.beginPath();
+    for(i=0;i<6;i++){
+      a=Math.PI/180*(60*i-30);
+      if(i===0) ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+      else ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+    }
+    ctx.closePath();
+  }
+  function drawHexes(s){
+    var b=sheetWorld(s), pxPerHex=HEX_MI*cam.scale;
+    if(pxPerHex<5) return;
+    var origin=lonlatToWorld(s.box.w, s.box.s);
+    var view=screenToWorld(0,0), view2=screenToWorld(stage.clientWidth, stage.clientHeight);
+    var minX=Math.min(view.x,view2.x), maxX=Math.max(view.x,view2.x);
+    var minY=Math.min(view.y,view2.y), maxY=Math.max(view.y,view2.y);
+    var c0=Math.max(0, Math.floor((minX-origin.x)/HEX_MI)-2);
+    var c1=Math.min(s.hex.cols-1, Math.ceil((maxX-origin.x)/HEX_MI)+2);
+    var r0=Math.max(0, Math.floor((minY-origin.y)/ROW_MI)-2);
+    var r1=Math.min(s.hex.rows-1, Math.ceil((maxY-origin.y)/ROW_MI)+2);
+    var c,r,wx,wy,sp, rad=pxPerHex*0.52;
+    ctx.strokeStyle="rgba(44,34,20,.28)";
+    ctx.lineWidth=0.6;
+    for(r=r0;r<=r1;r++){
+      for(c=c0;c<=c1;c++){
+        wx=origin.x+(c+((r&1)?0.5:0))*HEX_MI;
+        wy=origin.y+r*ROW_MI;
+        if(wx<b.x0||wx>b.x1||wy<b.y0||wy>b.y1) continue;
+        sp=worldToScreen(wx,wy);
+        hexPoly(sp.x, sp.y, rad);
+        ctx.stroke();
+      }
+    }
+  }
+  function niceMiles(pxTarget){
+    var mi=pxTarget/cam.scale, step=0.1, steps=[0.1,0.2,0.5,1,2,5,10,20,50,100], i;
+    for(i=0;i<steps.length;i++) if(steps[i]>=mi){ step=steps[i]; break; }
+    return step;
+  }
+  function draw(){
+    var W=stage.clientWidth, H=stage.clientHeight, i, s, b, a, c, pin;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle="#e4d6b0";
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="rgba(126,160,196,.35)";
+    ctx.strokeStyle="rgba(77,111,147,.55)";
+    ctx.lineWidth=1;
+    drawPath(BAY, true); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle="#3d6a8a";
+    ctx.lineWidth=Math.max(1.2, Math.min(5, 0.18*cam.scale));
+    ctx.lineCap="round"; ctx.lineJoin="round";
+    for(i=0;i<WATER.length;i++){ drawPath(WATER[i].pts, false); ctx.stroke(); }
+    for(i=0;i<SHEETS.length;i++){
+      s=SHEETS[i]; b=sheetWorld(s);
+      a=worldToScreen(b.x0,b.y1); c=worldToScreen(b.x1,b.y0);
+      var x=Math.min(a.x,c.x), y=Math.min(a.y,c.y), w=Math.abs(c.x-a.x), h=Math.abs(c.y-a.y);
+      ctx.fillStyle=s.fill;
+      ctx.strokeStyle=s===hover? "#8a3320" : (s.kind==="site"?"#8a3320":"#8a6a2a");
+      ctx.lineWidth=s===hover?2.4:(s.kind==="site"?1.8:1.4);
+      ctx.fillRect(x,y,w,h);
+      ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
+      drawHexes(s);
+      if(w<8 || h<8){
+        pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
+        ctx.fillStyle="#8a3320";
+        ctx.beginPath(); ctx.arc(pin.x, pin.y, 4.5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle="#2c2214";
+        ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+        ctx.textAlign="left"; ctx.textBaseline="middle";
+        ctx.fillText(s.id+" \u00b7 "+s.name, pin.x+8, pin.y);
+      } else {
+        ctx.fillStyle="#2c2214";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        if(w>54){
+          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id, x+w/2, y+h/2-7);
+          ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+          ctx.fillText(s.name, x+w/2, y+h/2+8);
+        } else {
+          ctx.font='700 9px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id, x+w/2, y+h/2);
+        }
+      }
+    }
+    for(i=0;i<PLACES.length;i++){
+      if(cam.scale<PLACES[i].z*4 && PLACES[i].z>0.5) continue;
+      var pw=lonlatToWorld(PLACES[i].lon, PLACES[i].lat);
+      var ps=worldToScreen(pw.x,pw.y);
+      ctx.fillStyle="#2c2214";
+      ctx.beginPath(); ctx.arc(ps.x, ps.y, 2.2, 0, Math.PI*2); ctx.fill();
+      if(cam.scale>3.2){
+        ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+        ctx.textAlign="left"; ctx.textBaseline="bottom";
+        ctx.fillText(PLACES[i].name, ps.x+5, ps.y-3);
+      }
+    }
+    var barMi=niceMiles(110), barPx=barMi*cam.scale, bx=W-24-barPx, by=H-22;
+    ctx.strokeStyle="#2c2214"; ctx.fillStyle="#2c2214"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+barPx,by); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx,by-4); ctx.lineTo(bx,by+4); ctx.moveTo(bx+barPx,by-4); ctx.lineTo(bx+barPx,by+4); ctx.stroke();
+    ctx.font='700 10px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+    ctx.textAlign="center"; ctx.textBaseline="bottom";
+    ctx.fillText(barMi>=1? (barMi+" mi") : (Math.round(barMi*1760)+" yd"), bx+barPx/2, by-6);
+    ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillText("N", 18, 16);
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(22,52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(18,40); ctx.lineTo(26,40); ctx.closePath(); ctx.fill();
+  }
+  function setStatus(s){
+    var place=document.getElementById("statplace");
+    var size=document.getElementById("statsize");
+    var hex=document.getElementById("stathex");
+    if(!s){
+      place.innerHTML="<b>Place</b> \u2014";
+      size.innerHTML="<b>Size</b> \u2014";
+      hex.innerHTML="<b>Hexes</b> \u2014";
+      return;
+    }
+    place.innerHTML="<b>Place</b> "+s.id+" \u00b7 "+s.name;
+    size.innerHTML="<b>Size</b> "+s.hex.miW.toFixed(2)+" \u00d7 "+s.hex.miH.toFixed(2)+" mi";
+    hex.innerHTML="<b>Hexes</b> "+s.hex.cols+" \u00d7 "+s.hex.rows+" \u00b7 "+YDS+" yd/hex";
+  }
+  cv.addEventListener("pointerdown", function(ev){
+    panning=true; panMoved=false; lastPan={x:ev.clientX,y:ev.clientY}; cv.classList.add("panning");
+    cv.setPointerCapture(ev.pointerId);
+  });
+  cv.addEventListener("pointermove", function(ev){
+    var r=cv.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
+    if(panning && lastPan){
+      var dx=ev.clientX-lastPan.x, dy=ev.clientY-lastPan.y;
+      if(Math.abs(dx)+Math.abs(dy)>3) panMoved=true;
+      cam.x-=dx/cam.scale;
+      cam.y+=dy/cam.scale;
+      lastPan={x:ev.clientX,y:ev.clientY};
+      draw();
+    } else {
+      hover=hitSheet(x,y);
+      setStatus(hover);
+      draw();
+    }
+  });
+  function endPan(ev){
+    if(panning && ev.type==="pointerup" && !panMoved){
+      var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
+      if(s){ fitSheets([s], 0.35); setStatus(s); }
+    }
+    panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
+  }
+  cv.addEventListener("pointerup", endPan);
+  cv.addEventListener("pointercancel", endPan);
+  cv.addEventListener("wheel", function(ev){
+    ev.preventDefault();
+    var r=cv.getBoundingClientRect();
+    zoomAt(ev.clientX-r.left, ev.clientY-r.top, ev.deltaY<0?1.18:1/1.18);
+  }, {passive:false});
+  document.getElementById("fitall").onclick=function(){ fitSheets(SHEETS, 22); };
+  document.getElementById("fitdc").onclick=function(){
+    fitSheets(SHEETS.filter(function(s){ return s.kind==="plate"; }), 2);
+  };
+  document.getElementById("fityt").onclick=function(){
+    var s=SHEETS.filter(function(x){ return x.id==="YT-00"; })[0];
+    fitSheets([s], 0.35); setStatus(s);
+  };
+  document.getElementById("fitpr").onclick=function(){
+    var s=SHEETS.filter(function(x){ return x.id==="PR-00"; })[0];
+    fitSheets([s], 0.35); setStatus(s);
+  };
+  document.getElementById("zoomin").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.25); };
+  document.getElementById("zoomout").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.25); };
+  window.addEventListener("resize", resize);
+  resize();
+  fitSheets(SHEETS, 22);
+})();
+</script>
 </body>
 </html>
