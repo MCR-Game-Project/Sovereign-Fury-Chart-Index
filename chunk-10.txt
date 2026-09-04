@@ -1,4 +1,39 @@
-6298, 41.8781],
+
+  function endPan(ev){
+    if(panning && ev.type==="pointerup" && !panMoved){
+      var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
+      if(s){ fitSheets([s], 0.35); setStatus(s); }
+    }
+    panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
+  }
+  cv.addEventListener("pointerup", endPan);
+  cv.addEventListener("pointercancel", endPan);
+  cv.addEventListener("wheel", function(ev){
+    ev.preventDefault();
+    var r=cv.getBoundingClientRect();
+    zoomAt(ev.clientX-r.left, ev.clientY-r.top, ev.deltaY<0?1.18:1/1.18);
+  }, {passive:false});
+
+  function fitLonlats(pts, pad){
+    var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(i=0;i<pts.length;i++){
+      p=lonlatToWorld(pts[i][0], pts[i][1]);
+      if(p.x<x0) x0=p.x; if(p.y<y0) y0=p.y;
+      if(p.x>x1) x1=p.x; if(p.y>y1) y1=p.y;
+    }
+    pad=pad==null?40:pad;
+    x0-=pad; y0-=pad; x1+=pad; y1+=pad;
+    var W=stage.clientWidth, H=stage.clientHeight;
+    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
+    cam.scale=Math.max(MIN_SCALE, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    draw();
+  }
+  function fitAll(){
+    /* NM west · Chicago · Boston · South Texas · Key West */
+    fitLonlats([
+      [-109.40, 31.33],
+      [-109.05, 36.99],
+      [-87.6298, 41.8781],
       [-71.0589, 42.3601],
       [-69.40, 42.20],
       [-81.7799, 24.5551],
