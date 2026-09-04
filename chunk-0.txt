@@ -49,6 +49,7 @@
     <button class="btn" id="fitdc" type="button">Fit Washington block</button>
     <button class="btn" id="fityt" type="button">Yorktown</button>
     <button class="btn" id="fitpr" type="button">Port Royal</button>
+    <button class="btn" id="fitlf" type="button">Liberty Furnace</button>
     <button class="btn" id="zoomin" type="button">＋</button>
     <button class="btn" id="zoomout" type="button">－</button>
   </div>
@@ -81,8 +82,4 @@
     var dLon=miW/2/miPerDegLon(lat), dLat=miH/2/MI_PER_DEG_LAT;
     return {w:lon-dLon, e:lon+dLon, s:lat-dLat, n:lat+dLat};
   }
-  function plateBox(westLon, southLat){
-    return {
-      w:westLon,
-      s:southLat,
-      e:westLon+PLA
+  function plateBox(westLon, sout
