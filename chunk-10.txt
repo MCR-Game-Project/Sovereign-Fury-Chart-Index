@@ -1,4 +1,77 @@
+      ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id, x+w/2, y+h/2-7);
+          ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+          ctx.fillText(s.name, x+w/2, y+h/2+8);
+        } else {
+          ctx.font='700 9px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id, x+w/2, y+h/2);
+        }
+      }
+    }
 
+    for(i=0;i<PLACES.length;i++){
+      var pl=PLACES[i];
+      if(pl.z>0 && cam.scale<Math.max(0.8, pl.z*2.4)) continue;
+      var pw=lonlatToWorld(pl.lon, pl.lat);
+      var ps=worldToScreen(pw.x,pw.y);
+      ctx.fillStyle="#2c2214";
+      ctx.beginPath(); ctx.arc(ps.x, ps.y, pl.z===0?2.6:2.2, 0, Math.PI*2); ctx.fill();
+      if(pl.z===0 || cam.scale>=Math.max(2.2, pl.z*3)){
+        ctx.font=(pl.z===0?'italic 12px ':'italic 11px ')+'"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+        ctx.textAlign="left"; ctx.textBaseline="bottom";
+        ctx.fillText(pl.name, ps.x+5, ps.y-3);
+      }
+    }
+    drawStations();
+
+    var barMi=niceMiles(110), barPx=barMi*cam.scale, bx=W-24-barPx, by=H-22;
+    ctx.strokeStyle="#2c2214"; ctx.fillStyle="#2c2214"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+barPx,by); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx,by-4); ctx.lineTo(bx,by+4); ctx.moveTo(bx+barPx,by-4); ctx.lineTo(bx+barPx,by+4); ctx.stroke();
+    ctx.font='700 10px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+    ctx.textAlign="center"; ctx.textBaseline="bottom";
+    ctx.fillText(barMi>=1? (barMi+" mi") : (Math.round(barMi*1760)+" yd"), bx+barPx/2, by-6);
+
+    ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillText("N", 18, 16);
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(22,52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(18,40); ctx.lineTo(26,40); ctx.closePath(); ctx.fill();
+  }
+  function setStatus(s){
+    var place=document.getElementById("statplace");
+    var size=document.getElementById("statsize");
+    var hex=document.getElementById("stathex");
+    if(!s){
+      place.innerHTML="<b>Place</b> —";
+      size.innerHTML="<b>Size</b> —";
+      hex.innerHTML="<b>Hexes</b> —";
+      return;
+    }
+    place.innerHTML="<b>Place</b> "+s.id+" · "+s.name;
+    size.innerHTML="<b>Size</b> "+s.hex.miW.toFixed(2)+" × "+s.hex.miH.toFixed(2)+" mi";
+    hex.innerHTML="<b>Hexes</b> "+s.hex.cols+" × "+s.hex.rows+" · "+YDS+" yd/hex";
+  }
+
+  cv.addEventListener("pointerdown", function(ev){
+    panning=true; panMoved=false; lastPan={x:ev.clientX,y:ev.clientY}; cv.classList.add("panning");
+    cv.setPointerCapture(ev.pointerId);
+  });
+  cv.addEventListener("pointermove", function(ev){
+    var r=cv.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
+    if(panning && lastPan){
+      var dx=ev.clientX-lastPan.x, dy=ev.clientY-lastPan.y;
+      if(Math.abs(dx)+Math.abs(dy)>3) panMoved=true;
+      cam.x-=dx/cam.scale;
+      cam.y+=dy/cam.scale;
+      lastPan={x:ev.clientX,y:ev.clientY};
+      draw();
+    } else {
+      hover=hitSheet(x,y);
+      setStatus(hover);
+      draw();
+    }
+  });
   function endPan(ev){
     if(panning && ev.type==="pointerup" && !panMoved){
       var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
@@ -18,54 +91,3 @@
     var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
     for(i=0;i<pts.length;i++){
       p=lonlatToWorld(pts[i][0], pts[i][1]);
-      if(p.x<x0) x0=p.x; if(p.y<y0) y0=p.y;
-      if(p.x>x1) x1=p.x; if(p.y>y1) y1=p.y;
-    }
-    pad=pad==null?40:pad;
-    x0-=pad; y0-=pad; x1+=pad; y1+=pad;
-    var W=stage.clientWidth, H=stage.clientHeight;
-    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
-    cam.scale=Math.max(MIN_SCALE, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
-    draw();
-  }
-  function fitAll(){
-    /* NM west · Chicago · Boston · South Texas · Key West */
-    fitLonlats([
-      [-109.40, 31.33],
-      [-109.05, 36.99],
-      [-87.6298, 41.8781],
-      [-71.0589, 42.3601],
-      [-69.40, 42.20],
-      [-81.7799, 24.5551],
-      [-97.4975, 25.9017]
-    ], 60);
-  }
-  document.getElementById("fitall").onclick=fitAll;
-  document.getElementById("fitdc").onclick=function(){
-    fitSheets(SHEETS.filter(function(s){ return s.kind==="plate"; }), 2);
-  };
-  document.getElementById("fityt").onclick=function(){
-    var s=SHEETS.filter(function(x){ return x.id==="YT-00"; })[0];
-    fitSheets([s], 0.35); setStatus(s);
-  };
-  document.getElementById("fitpr").onclick=function(){
-    var s=SHEETS.filter(function(x){ return x.id==="PR-00"; })[0];
-    /* Port Royal on the Rappahannock; show the run to Chesapeake water shared with the Potomac. */
-    fitLonlats([
-      [-77.30, 38.24],
-      [-76.18, 37.55],
-      [-76.16, 38.08],
-      [-77.10, 38.42]
-    ], 6);
-    setStatus(s);
-  };
-  document.getElementById("zoomin").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.25); };
-  document.getElementById("zoomout").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.25); };
-
-  window.addEventListener("resize", resize);
-  resize();
-  fitAll();
-})();
-</script>
-</body>
-</html>
