@@ -1,4 +1,4 @@
-[-95.639,31.054],[-95.645,30.933],[-95.424,30.936],[-95.372,30.848],[-95.259,30.885],[-95.028,30.581],[-94.835,30.539],[-94.775,30.335],[-94.839,30.029],[-94.745,29.782]]},
+1.61],[-95.722,31.635],[-95.742,31.466],[-95.656,31.333],[-95.777,31.128],[-95.639,31.054],[-95.645,30.933],[-95.424,30.936],[-95.372,30.848],[-95.259,30.885],[-95.028,30.581],[-94.835,30.539],[-94.775,30.335],[-94.839,30.029],[-94.745,29.782]]},
     {name:"James", pts:[[-79.8,37.79],[-79.45,37.6],[-79.15,37.41],[-78.88,37.4],[-78.55,37.4],[-78.16,37.52],[-77.65,37.56],[-77.45,37.53],[-77.42,37.42],[-77.36,37.38],[-77.27,37.314],[-77.05,37.31],[-76.97,37.23],[-76.78,37.21],[-76.64,37.15],[-76.55,37.08],[-76.40,36.96]]}
   ];
   var WATER_LABELS=[
@@ -12,6 +12,19 @@
     {name:"York R.", lon:-76.62, lat:37.34, z:2.4},
     {name:"James R.", lon:-76.92, lat:37.20, z:2.4},
     {name:"Hampton Roads", lon:-76.32, lat:36.96, z:2.2}
+  ];
+  /* Resource chips sit flush to the station name — no reserved empty icon column. */
+  var ICON_GAP=1, NAME_GAP=0, ICON=14;
+  var RES_CHIP={
+    charcoal:{border:"#2f6b3a", ink:"#2a2418"},
+    "iron-ore":{border:"#8a2a22", ink:"#2a2418"},
+    "pig-iron":{border:"#8a2a22", ink:"#2a2418"}
+  };
+  var STATIONS=[
+    {name:"Liberty Furnace", lon:-78.663, lat:38.821, res:["charcoal","iron-ore","iron-ore"]},
+    {name:"Columbia Furnace", lon:-78.636, lat:38.870, res:["charcoal","iron-ore","pig-iron"]},
+    {name:"Caroline Furnace", lon:-78.548, lat:38.548, res:["charcoal","iron-ore"]},
+    {name:"Sherando", lon:-78.951, lat:37.988, res:["charcoal","iron-ore","pig-iron"]}
   ];
 
   var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
@@ -73,23 +86,4 @@
   function drawPath(pts, close){
     var i, p, s;
     ctx.beginPath();
-    for(i=0;i<pts.length;i++){
-      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
-      if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
-    }
-    if(close) ctx.closePath();
-  }
-  function lonlatInPoly(lon, lat, poly){
-    var inside=false, n=poly.length, j=n-1, i, xi, yi, xj, yj;
-    for(i=0;i<n;i++){
-      xi=poly[i][0]; yi=poly[i][1]; xj=poly[j][0]; yj=poly[j][1];
-      if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/(yj-yi+1e-30)+xi)) inside=!inside;
-      j=i;
-    }
-    return inside;
-  }
-  /* River strokes stop at a larger body. A river may run through its own estuary. */
-  var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1};
-  function riverInLargerWater(name, lon, lat){
-    var i, L, own=name+" estuary";
-    for(i=0;i<LAKES
+    for(i=0;i<pts.length
