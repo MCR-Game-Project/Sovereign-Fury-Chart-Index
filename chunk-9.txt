@@ -1,4 +1,36 @@
-(pl.z>0 && cam.scale<Math.max(0.8, pl.z*2.4)) continue;
+lineWidth=s===hover?2.4:(s.kind==="site"?1.8:1.4);
+      ctx.fillRect(x,y,w,h);
+      ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
+      drawHexes(s);
+      if(w<8 || h<8){
+        pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
+        ctx.fillStyle="#8a3320";
+        ctx.beginPath(); ctx.arc(pin.x, pin.y, cam.scale<1?3:4.5, 0, Math.PI*2); ctx.fill();
+        if(cam.scale>=1){
+        ctx.fillStyle="#2c2214";
+        ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+        ctx.textAlign="left"; ctx.textBaseline="middle";
+        ctx.fillText(s.id+" · "+s.name, pin.x+8, pin.y);
+        }
+      } else {
+        ctx.fillStyle="#2c2214";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        if(w>54){
+          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id, x+w/2, y+h/2-7);
+          ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+          ctx.fillText(s.name, x+w/2, y+h/2+8);
+        } else {
+          ctx.font='700 9px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id, x+w/2, y+h/2);
+        }
+      }
+    }
+
+    for(i=0;i<PLACES.length;i++){
+      var pl=PLACES[i];
+      if(pl.z>0 && cam.scale<Math.max(0.8, pl.z*2.4)) continue;
       var pw=lonlatToWorld(pl.lon, pl.lat);
       var ps=worldToScreen(pw.x,pw.y);
       ctx.fillStyle="#2c2214";
@@ -58,38 +90,3 @@
       draw();
     }
   });
-  function endPan(ev){
-    if(panning && ev.type==="pointerup" && !panMoved){
-      var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
-      if(s){ fitSheets([s], 0.35); setStatus(s); }
-    }
-    panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
-  }
-  cv.addEventListener("pointerup", endPan);
-  cv.addEventListener("pointercancel", endPan);
-  cv.addEventListener("wheel", function(ev){
-    ev.preventDefault();
-    var r=cv.getBoundingClientRect();
-    zoomAt(ev.clientX-r.left, ev.clientY-r.top, ev.deltaY<0?1.18:1/1.18);
-  }, {passive:false});
-
-  function fitLonlats(pts, pad){
-    var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-    for(i=0;i<pts.length;i++){
-      p=lonlatToWorld(pts[i][0], pts[i][1]);
-      if(p.x<x0) x0=p.x; if(p.y<y0) y0=p.y;
-      if(p.x>x1) x1=p.x; if(p.y>y1) y1=p.y;
-    }
-    pad=pad==null?40:pad;
-    x0-=pad; y0-=pad; x1+=pad; y1+=pad;
-    var W=stage.clientWidth, H=stage.clientHeight;
-    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
-    cam.scale=Math.max(MIN_SCALE, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
-    draw();
-  }
-  function fitAll(){
-    /* NM west · Chicago · Boston · South Texas · Key West */
-    fitLonlats([
-      [-109.40, 31.33],
-      [-109.05, 36.99],
-      [-87.
