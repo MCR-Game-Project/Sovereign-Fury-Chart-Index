@@ -47,7 +47,8 @@
 
   window.addEventListener("resize", resize);
   resize();
-  fitAll();
+  if(/lf/i.test(location.hash+location.search)) document.getElementById("fitlf").click();
+  else fitAll();
 })();
 </script>
 </body>
