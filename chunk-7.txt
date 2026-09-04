@@ -1,5 +1,5 @@
-36],[-95.372,30.848],[-95.259,30.885],[-95.028,30.581],[-94.835,30.539],[-94.775,30.335],[-94.839,30.029],[-94.745,29.782]]},
-    {name:"James", pts:[[-79.8,37.79],[-79.45,37.6],[-79.15,37.41],[-78.88,37.4],[-78.55,37.4],[-78.16,37.52],[-77.65,37.56],[-77.45,37.53],[-77.42,37.42],[-77.36,37.38],[-77.27,37.314],[-77.05,37.31],[-76.97,37.23],[-76.78,37.21],[-76.64,37.15],[-76.55,37.08],[-76.40,36.96],[-76.32,36.95],[-76.18,36.99]]}
+[-95.639,31.054],[-95.645,30.933],[-95.424,30.936],[-95.372,30.848],[-95.259,30.885],[-95.028,30.581],[-94.835,30.539],[-94.775,30.335],[-94.839,30.029],[-94.745,29.782]]},
+    {name:"James", pts:[[-79.8,37.79],[-79.45,37.6],[-79.15,37.41],[-78.88,37.4],[-78.55,37.4],[-78.16,37.52],[-77.65,37.56],[-77.45,37.53],[-77.42,37.42],[-77.36,37.38],[-77.27,37.314],[-77.05,37.31],[-76.97,37.23],[-76.78,37.21],[-76.64,37.15],[-76.55,37.08],[-76.40,36.96]]}
   ];
   var WATER_LABELS=[
     {name:"Atlantic Ocean", lon:-72.40, lat:34.60, z:0},
@@ -79,20 +79,17 @@
     }
     if(close) ctx.closePath();
   }
-  function hexPoly(cx, cy, r){
-    var i, a;
-    ctx.beginPath();
-    for(i=0;i<6;i++){
-      a=Math.PI/180*(60*i-30);
-      if(i===0) ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
-      else ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+  function lonlatInPoly(lon, lat, poly){
+    var inside=false, n=poly.length, j=n-1, i, xi, yi, xj, yj;
+    for(i=0;i<n;i++){
+      xi=poly[i][0]; yi=poly[i][1]; xj=poly[j][0]; yj=poly[j][1];
+      if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/(yj-yi+1e-30)+xi)) inside=!inside;
+      j=i;
     }
-    ctx.closePath();
+    return inside;
   }
-  function drawHexes(s){
-    var b=sheetWorld(s), pxPerHex=HEX_MI*cam.scale;
-    if(pxPerHex<5) return;
-    var origin=lonlatToWorld(s.box.w, s.box.s);
-    var view=screenToWorld(0,0), view2=screenToWorld(stage.clientWidth, stage.clientHeight);
-    var minX=Math.min(view.x,view2.x), maxX=Math.max(view.x,view2.x);
-  
+  /* River strokes stop at a larger body. A river may run through its own estuary. */
+  var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1};
+  function riverInLargerWater(name, lon, lat){
+    var i, L, own=name+" estuary";
+    for(i=0;i<LAKES
