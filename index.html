@@ -8,7 +8,7 @@
 <body>
 <script>
 (async function(){
-  var n=11, i, parts=[];
+  var n=12, i, parts=[];
   for(i=0;i<n;i++) parts.push(await (await fetch("chunk-"+i+".txt")).text());
   document.open();
   document.write(parts.join(""));
