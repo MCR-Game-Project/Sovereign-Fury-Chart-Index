@@ -1,0 +1,98 @@
+36],[-95.372,30.848],[-95.259,30.885],[-95.028,30.581],[-94.835,30.539],[-94.775,30.335],[-94.839,30.029],[-94.745,29.782]]},
+    {name:"James", pts:[[-79.8,37.79],[-79.45,37.6],[-79.15,37.41],[-78.88,37.4],[-78.55,37.4],[-78.16,37.52],[-77.65,37.56],[-77.45,37.53],[-77.42,37.42],[-77.36,37.38],[-77.27,37.314],[-77.05,37.31],[-76.97,37.23],[-76.78,37.21],[-76.64,37.15],[-76.55,37.08],[-76.40,36.96],[-76.32,36.95],[-76.18,36.99]]}
+  ];
+  var WATER_LABELS=[
+    {name:"Atlantic Ocean", lon:-72.40, lat:34.60, z:0},
+    {name:"Gulf of Mexico", lon:-90.60, lat:25.70, z:0},
+    {name:"Lake Michigan", lon:-87.05, lat:43.05, z:0},
+    {name:"Mississippi R.", lon:-91.20, lat:33.90, z:0},
+    {name:"Chesapeake Bay", lon:-76.10, lat:37.68, z:1.0},
+    {name:"Potomac R.", lon:-77.12, lat:38.42, z:1.8},
+    {name:"Rappahannock R.", lon:-76.78, lat:37.92, z:2.0},
+    {name:"York R.", lon:-76.62, lat:37.34, z:2.4},
+    {name:"James R.", lon:-76.92, lat:37.20, z:2.4},
+    {name:"Hampton Roads", lon:-76.32, lat:36.96, z:2.2}
+  ];
+
+  var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+  var stage=cv.parentElement, dpr=Math.max(1, window.devicePixelRatio||1);
+    var cam={x:0,y:0,scale:8}, hover=null, panning=false, lastPan=null, panMoved=false;
+
+  function resize(){
+    var w=stage.clientWidth, h=stage.clientHeight;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    cv.style.width=w+"px"; cv.style.height=h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+  function worldToScreen(wx, wy){
+    return {x:(wx-cam.x)*cam.scale+stage.clientWidth/2, y:(cam.y-wy)*cam.scale+stage.clientHeight/2};
+  }
+  function screenToWorld(sx, sy){
+    return {x:cam.x+(sx-stage.clientWidth/2)/cam.scale, y:cam.y-(sy-stage.clientHeight/2)/cam.scale};
+  }
+  function sheetWorld(s){
+    var sw=lonlatToWorld(s.box.w, s.box.s), ne=lonlatToWorld(s.box.e, s.box.n);
+    return {x0:sw.x, y0:sw.y, x1:ne.x, y1:ne.y};
+  }
+  function zoomAt(sx, sy, factor){
+    var w=screenToWorld(sx,sy);
+    cam.scale=Math.max(MIN_SCALE, Math.min(MAX_SCALE, cam.scale*factor));
+    var w2=screenToWorld(sx,sy);
+    cam.x+=w.x-w2.x; cam.y+=w.y-w2.y;
+    draw();
+  }
+  function fitSheets(list, pad){
+    var i, b, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(i=0;i<list.length;i++){
+      b=sheetWorld(list[i]);
+      if(b.x0<x0) x0=b.x0; if(b.y0<y0) y0=b.y0;
+      if(b.x1>x1) x1=b.x1; if(b.y1>y1) y1=b.y1;
+    }
+    pad=pad==null?18:pad;
+    x0-=pad; y0-=pad; x1+=pad; y1+=pad;
+    var W=stage.clientWidth, H=stage.clientHeight;
+    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
+    cam.scale=Math.max(MIN_SCALE, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    draw();
+  }
+  function hitSheet(sx, sy){
+    var w=screenToWorld(sx,sy), i, b, c, d, best=null, bestD=16;
+    for(i=SHEETS.length-1;i>=0;i--){
+      b=sheetWorld(SHEETS[i]);
+      if(w.x>=b.x0 && w.x<=b.x1 && w.y>=b.y0 && w.y<=b.y1) return SHEETS[i];
+    }
+    for(i=0;i<SHEETS.length;i++){
+      b=sheetWorld(SHEETS[i]);
+      c=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
+      d=Math.hypot(sx-c.x, sy-c.y);
+      if(d<bestD){ bestD=d; best=SHEETS[i]; }
+    }
+    return best;
+  }
+  function drawPath(pts, close){
+    var i, p, s;
+    ctx.beginPath();
+    for(i=0;i<pts.length;i++){
+      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
+      if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
+    }
+    if(close) ctx.closePath();
+  }
+  function hexPoly(cx, cy, r){
+    var i, a;
+    ctx.beginPath();
+    for(i=0;i<6;i++){
+      a=Math.PI/180*(60*i-30);
+      if(i===0) ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+      else ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+    }
+    ctx.closePath();
+  }
+  function drawHexes(s){
+    var b=sheetWorld(s), pxPerHex=HEX_MI*cam.scale;
+    if(pxPerHex<5) return;
+    var origin=lonlatToWorld(s.box.w, s.box.s);
+    var view=screenToWorld(0,0), view2=screenToWorld(stage.clientWidth, stage.clientHeight);
+    var minX=Math.min(view.x,view2.x), maxX=Math.max(view.x,view2.x);
+  
