@@ -1,0 +1,36 @@
+6298, 41.8781],
+      [-71.0589, 42.3601],
+      [-69.40, 42.20],
+      [-81.7799, 24.5551],
+      [-97.4975, 25.9017]
+    ], 60);
+  }
+  document.getElementById("fitall").onclick=fitAll;
+  document.getElementById("fitdc").onclick=function(){
+    fitSheets(SHEETS.filter(function(s){ return s.kind==="plate"; }), 2);
+  };
+  document.getElementById("fityt").onclick=function(){
+    var s=SHEETS.filter(function(x){ return x.id==="YT-00"; })[0];
+    fitSheets([s], 0.35); setStatus(s);
+  };
+  document.getElementById("fitpr").onclick=function(){
+    var s=SHEETS.filter(function(x){ return x.id==="PR-00"; })[0];
+    /* Port Royal on the Rappahannock; show the run to Chesapeake water shared with the Potomac. */
+    fitLonlats([
+      [-77.30, 38.24],
+      [-76.18, 37.55],
+      [-76.16, 38.08],
+      [-77.10, 38.42]
+    ], 6);
+    setStatus(s);
+  };
+  document.getElementById("zoomin").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.25); };
+  document.getElementById("zoomout").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.25); };
+
+  window.addEventListener("resize", resize);
+  resize();
+  fitAll();
+})();
+</script>
+</body>
+</html>
