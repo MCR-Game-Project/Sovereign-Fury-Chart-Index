@@ -1,4 +1,5 @@
-      ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+{
+          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
           ctx.fillText(s.id, x+w/2, y+h/2-7);
           ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
           ctx.fillText(s.name, x+w/2, y+h/2+8);
@@ -90,4 +91,4 @@
   function fitLonlats(pts, pad){
     var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
     for(i=0;i<pts.length;i++){
-      p=lonlatToWorld(pts[i][0], pts[i][1]);
+      p=lonlatToWorld(pts[i][0], pts[i]
