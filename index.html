@@ -13,7 +13,7 @@
   var n=12, boot=document.getElementById("boot");
   try{
     var parts=await Promise.all(Array.from({length:n},function(_,i){
-      return fetch("chunk-"+i+".txt?v=stl").then(function(r){
+      return fetch("chunk-"+i+".txt?v=north").then(function(r){
         if(!r.ok) throw new Error("chunk "+i);
         return r.text();
       });
