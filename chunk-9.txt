@@ -1,4 +1,21 @@
-Math.PI/180*(60*i-30);
+ reserved empty slot. */
+      nameX=n? (n-1)*(ICON+ICON_GAP)+ICON+NAME_GAP : 0;
+      x0=ps.x-(nameX+ctx.measureText(st.name).width)/2;
+      y0=ps.y-ICON/2;
+      for(k=0;k<n;k++) drawResChip(x0+k*(ICON+ICON_GAP), y0, res[k]);
+      ctx.lineWidth=3;
+      ctx.strokeStyle="rgba(236,225,198,.92)";
+      ctx.strokeText(st.name, x0+nameX, ps.y);
+      ctx.fillStyle="#2c2214";
+      ctx.fillText(st.name, x0+nameX, ps.y);
+    }
+    ctx.restore();
+  }
+  function hexPoly(cx, cy, r){
+    var i, a;
+    ctx.beginPath();
+    for(i=0;i<6;i++){
+      a=Math.PI/180*(60*i-30);
       if(i===0) ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
       else ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
     }
@@ -86,18 +103,4 @@ Math.PI/180*(60*i-30);
       ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
       drawHexes(s);
       if(w<8 || h<8){
-        pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
-        ctx.fillStyle="#8a3320";
-        ctx.beginPath(); ctx.arc(pin.x, pin.y, cam.scale<1?3:4.5, 0, Math.PI*2); ctx.fill();
-        if(cam.scale>=1){
-        ctx.fillStyle="#2c2214";
-        ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-        ctx.textAlign="left"; ctx.textBaseline="middle";
-        ctx.fillText(s.id+" · "+s.name, pin.x+8, pin.y);
-        }
-      } else {
-        ctx.fillStyle="#2c2214";
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
-        if(w>54){
-        
+        pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1
