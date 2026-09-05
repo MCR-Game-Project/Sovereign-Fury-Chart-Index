@@ -1,5 +1,4 @@
-{
-          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+  ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
           ctx.fillText(s.id, x+w/2, y+h/2-7);
           ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
           ctx.fillText(s.name, x+w/2, y+h/2+8);
@@ -19,8 +18,8 @@
       ctx.beginPath(); ctx.arc(ps.x, ps.y, pl.z===0?2.6:2.2, 0, Math.PI*2); ctx.fill();
       if(pl.z===0 || cam.scale>=Math.max(2.2, pl.z*3)){
         ctx.font=(pl.z===0?'italic 12px ':'italic 11px ')+'"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-        ctx.textAlign="left"; ctx.textBaseline="bottom";
-        ctx.fillText(pl.name, ps.x+5, ps.y-3);
+        ctx.textAlign=pl.align||"left"; ctx.textBaseline="bottom";
+        ctx.fillText(pl.name, pl.align==="right"?ps.x-5:ps.x+5, ps.y-3);
       }
     }
     drawStations();
@@ -91,4 +90,4 @@
   function fitLonlats(pts, pad){
     var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
     for(i=0;i<pts.length;i++){
-      p=lonlatToWorld(pts[i][0], pts[i]
+      p=lonla
