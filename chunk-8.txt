@@ -1,5 +1,4 @@
-;i++){
-      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
+    p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
       if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
     }
     if(close) ctx.closePath();
@@ -14,7 +13,7 @@
     return inside;
   }
   /* River strokes stop at a larger body. A river may run through its own estuary. */
-  var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1};
+  var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1,"Mobile Bay":1};
   function riverInLargerWater(name, lon, lat){
     var i, L, own=name+" estuary";
     for(i=0;i<LAKES.length;i++){
@@ -111,5 +110,4 @@
   function hexPoly(cx, cy, r){
     var i, a;
     ctx.beginPath();
-    for(i=0;i<6;i++){
-    
+    for(i=0;i<6;i++)
