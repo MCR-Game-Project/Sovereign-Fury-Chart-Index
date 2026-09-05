@@ -1,6 +1,4 @@
-atToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
-      if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
-    }
+
     if(close) ctx.closePath();
   }
   function lonlatInPoly(lon, lat, poly){
@@ -11,6 +9,27 @@ atToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
       j=i;
     }
     return inside;
+  }
+  /* Theatre land is clipped at this latitude. River strokes stop on that edge. */
+  var MAP_NORTH=43.4;
+  function clipRiverPts(pts){
+    var out=[], i, a, b, t, p;
+    for(i=0;i<pts.length;i++){
+      p=pts[i];
+      if(p[1]<=MAP_NORTH){
+        if(i && pts[i-1][1]>MAP_NORTH){
+          a=pts[i-1]; b=p;
+          t=(MAP_NORTH-a[1])/(b[1]-a[1]);
+          out.push([a[0]+t*(b[0]-a[0]), MAP_NORTH]);
+        }
+        out.push(p);
+      } else if(i && pts[i-1][1]<=MAP_NORTH){
+        a=pts[i-1]; b=p;
+        t=(MAP_NORTH-a[1])/(b[1]-a[1]);
+        out.push([a[0]+t*(b[0]-a[0]), MAP_NORTH]);
+      }
+    }
+    return out.length? out : pts;
   }
   /* River strokes stop at a larger body. A river may run through its own estuary. */
   var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1,"Mobile Bay":1};
@@ -27,6 +46,7 @@ atToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
   }
   function drawRiver(name, pts){
     var i, p, s, drawing=false;
+    pts=clipRiverPts(pts);
     ctx.beginPath();
     for(i=0;i<pts.length;i++){
       if(riverInLargerWater(name, pts[i][0], pts[i][1])){
@@ -94,21 +114,4 @@ atToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
       rowW=n? n*ICON+(n-1)*ICON_GAP : 0;
       ctx.font='italic 13px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
       ctx.textAlign="left"; ctx.textBaseline="middle";
-      /* Name starts at the last drawn chip's right edge — never after a reserved empty slot. */
-      nameX=n? (n-1)*(ICON+ICON_GAP)+ICON+NAME_GAP : 0;
-      x0=ps.x-(nameX+ctx.measureText(st.name).width)/2;
-      y0=ps.y-ICON/2;
-      for(k=0;k<n;k++) drawResChip(x0+k*(ICON+ICON_GAP), y0, res[k]);
-      ctx.lineWidth=3;
-      ctx.strokeStyle="rgba(236,225,198,.92)";
-      ctx.strokeText(st.name, x0+nameX, ps.y);
-      ctx.fillStyle="#2c2214";
-      ctx.fillText(st.name, x0+nameX, ps.y);
-    }
-    ctx.restore();
-  }
-  function hexPoly(cx, cy, r){
-    var i, a;
-    ctx.beginPath();
-    for(i=0;i<6;i++){
-      a=
+      /* Name starts at the last drawn chip's right edge — never after a
