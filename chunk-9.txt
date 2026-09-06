@@ -1,4 +1,4 @@
- reserved empty slot. */
+starts at the last drawn chip's right edge — never after a reserved empty slot. */
       nameX=n? (n-1)*(ICON+ICON_GAP)+ICON+NAME_GAP : 0;
       x0=ps.x-(nameX+ctx.measureText(st.name).width)/2;
       y0=ps.y-ICON/2;
@@ -102,5 +102,4 @@
       ctx.fillRect(x,y,w,h);
       ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
       drawHexes(s);
-      if(w<8 || h<8){
-        pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1
+      if(w<8 |
