@@ -66,7 +66,7 @@
     x0-=pad; y0-=pad; x1+=pad; y1+=pad;
     var W=stage.clientWidth, H=stage.clientHeight;
     cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
-    cam.scale=Math.max(MIN_SCALE, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    cam.scale=Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
     draw();
   }
   function hitSheet(sx, sy){
@@ -87,4 +87,4 @@
     var i, p, s;
     ctx.beginPath();
     for(i=0;i<pts.length;i++){
-      p=lonlatToWorld
+      p=lonlat
