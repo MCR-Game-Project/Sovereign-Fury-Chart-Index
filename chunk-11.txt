@@ -1,4 +1,5 @@
-tSheets([s], 0.35); setStatus(s); }
+entX-r.left, ev.clientY-r.top);
+      if(s){ fitSheets([s], 0.35); setStatus(s); }
     }
     panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
   }
