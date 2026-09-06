@@ -1,4 +1,5 @@
-
+(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
+    }
     if(close) ctx.closePath();
   }
   function lonlatInPoly(lon, lat, poly){
@@ -114,4 +115,4 @@
       rowW=n? n*ICON+(n-1)*ICON_GAP : 0;
       ctx.font='italic 13px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
       ctx.textAlign="left"; ctx.textBaseline="middle";
-      /* Name starts at the last drawn chip's right edge — never after a
+      /* Name 
