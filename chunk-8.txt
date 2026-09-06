@@ -1,118 +1,48 @@
-ToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
-      if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
-    }
-    if(close) ctx.closePath();
+-87.066,40.416],[-87.432,40.197],[-87.393,39.618],[-87.667,39.118],[-87.511,38.763],[-87.653,38.497],[-87.992,38.233],[-87.934,38.16],[-88.112,37.898],[-88.001,37.765]]},
+    {name:"Delaware", pts:[[-74.619,42.435],[-75.058,42.167],[-75.418,42.069],[-75.249,41.882],[-75.079,41.828],[-74.984,41.498],[-74.699,41.354],[-75.14,40.982],[-75.058,40.872],[-75.189,40.758],[-75.182,40.57],[-75.089,40.558],[-75.036,40.415],[-74.729,40.163],[-75.023,40.016],[-75.14,39.75],[-75.42,39.43]]},
+    {name:"Connecticut", pts:[[-72.415,43.4],[-72.471,43.006],[-72.556,42.878],[-72.47,42.699],[-72.577,42.606],[-72.632,42.353],[-72.653,41.592],[-72.379,41.366]]},
+    {name:"Susquehanna", pts:[[-74.882,42.819],[-74.984,42.489],[-75.586,42.215],[-75.608,41.961],[-75.995,42.12],[-76.275,42.109],[-76.505,41.97],[-76.43,41.767],[-76.058,41.633],[-75.784,41.331],[-76.121,41.171],[-76.145,41.077],[-76.783,40.89],[-77.017,40.389],[-76.53,40.062],[-76.077,39.56]]},
+    {name:"Rappahannock", pts:[[-78.112,38.879],[-77.998,38.716],[-77.877,38.657],[-77.862,38.569],[-77.738,38.419],[-77.645,38.413],[-77.611,38.358],[-77.472,38.316],[-77.412,38.255],[-77.24,38.243],[-77.191,38.176],[-77.05,38.15],[-76.99,38.12],[-76.92,38.02],[-76.86,37.93],[-76.78,37.82],[-76.70,37.72],[-76.58,37.66],[-76.45,37.62]]},
+    {name:"York", pts:[[-77.713,38.007],[-77.437,37.882],[-77.392,37.778],[-77.337,37.788],[-77.322,37.739],[-77.118,37.658],[-77.088,37.604],[-76.957,37.537],[-76.931,37.564],[-76.795,37.532],[-76.70,37.47],[-76.58,37.35],[-76.508,37.247],[-76.42,37.23]]},
+    {name:"Trinity", pts:[[-96.901,32.806],[-96.512,32.53],[-96.437,32.343],[-96.16,32.204],[-95.98,31.797],[-95.784,31.688],[-95.782,31.61],[-95.722,31.635],[-95.742,31.466],[-95.656,31.333],[-95.777,31.128],[-95.639,31.054],[-95.645,30.933],[-95.424,30.936],[-95.372,30.848],[-95.259,30.885],[-95.028,30.581],[-94.835,30.539],[-94.775,30.335],[-94.839,30.029],[-94.745,29.782]]},
+    {name:"James", pts:[[-79.8,37.79],[-79.45,37.6],[-79.15,37.41],[-78.88,37.4],[-78.55,37.4],[-78.16,37.52],[-77.65,37.56],[-77.45,37.53],[-77.42,37.42],[-77.36,37.38],[-77.27,37.314],[-77.05,37.31],[-76.97,37.23],[-76.78,37.21],[-76.64,37.15],[-76.55,37.08],[-76.40,36.96]]}
+  ];
+  var WATER_LABELS=[
+    {name:"Atlantic Ocean", lon:-72.40, lat:34.60, z:0},
+    {name:"Gulf of Mexico", lon:-90.60, lat:25.70, z:0},
+    {name:"Lake Michigan", lon:-87.05, lat:43.05, z:0},
+    {name:"Mississippi R.", lon:-91.20, lat:33.90, z:0},
+    {name:"Chesapeake Bay", lon:-76.10, lat:37.68, z:1.0},
+    {name:"Potomac R.", lon:-77.12, lat:38.42, z:1.8},
+    {name:"Rappahannock R.", lon:-76.78, lat:37.92, z:2.0},
+    {name:"York R.", lon:-76.62, lat:37.34, z:2.4},
+    {name:"James R.", lon:-76.92, lat:37.20, z:2.4},
+    {name:"Hampton Roads", lon:-76.32, lat:36.96, z:2.2}
+  ];
+  /* Resource chips sit flush to the station name — no reserved empty icon column. */
+  var ICON_GAP=1, NAME_GAP=0, ICON=14;
+  var RES_CHIP={
+    charcoal:{border:"#2f6b3a", ink:"#2a2418"},
+    "iron-ore":{border:"#8a2a22", ink:"#2a2418"},
+    "pig-iron":{border:"#8a2a22", ink:"#2a2418"}
+  };
+  var STATIONS=[
+    {name:"Liberty Furnace", lon:-78.663, lat:38.821, res:["charcoal","iron-ore","iron-ore"]},
+    {name:"Columbia Furnace", lon:-78.636, lat:38.870, res:["charcoal","iron-ore","pig-iron"]},
+    {name:"Caroline Furnace", lon:-78.548, lat:38.548, res:["charcoal","iron-ore"]},
+    {name:"Sherando", lon:-78.951, lat:37.988, res:["charcoal","iron-ore","pig-iron"]}
+  ];
+
+  var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+  var stage=cv.parentElement, dpr=Math.max(1, window.devicePixelRatio||1);
+    var cam={x:0,y:0,scale:8}, hover=null, panning=false, lastPan=null, panMoved=false;
+
+  function resize(){
+    var w=stage.clientWidth, h=stage.clientHeight;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    cv.style.width=w+"px"; cv.style.height=h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
   }
-  function lonlatInPoly(lon, lat, poly){
-    var inside=false, n=poly.length, j=n-1, i, xi, yi, xj, yj;
-    for(i=0;i<n;i++){
-      xi=poly[i][0]; yi=poly[i][1]; xj=poly[j][0]; yj=poly[j][1];
-      if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/(yj-yi+1e-30)+xi)) inside=!inside;
-      j=i;
-    }
-    return inside;
-  }
-  /* Theatre land is clipped at this latitude. River strokes stop on that edge. */
-  var MAP_NORTH=43.4;
-  function clipRiverPts(pts){
-    var out=[], i, a, b, t, p;
-    for(i=0;i<pts.length;i++){
-      p=pts[i];
-      if(p[1]<=MAP_NORTH){
-        if(i && pts[i-1][1]>MAP_NORTH){
-          a=pts[i-1]; b=p;
-          t=(MAP_NORTH-a[1])/(b[1]-a[1]);
-          out.push([a[0]+t*(b[0]-a[0]), MAP_NORTH]);
-        }
-        out.push(p);
-      } else if(i && pts[i-1][1]<=MAP_NORTH){
-        a=pts[i-1]; b=p;
-        t=(MAP_NORTH-a[1])/(b[1]-a[1]);
-        out.push([a[0]+t*(b[0]-a[0]), MAP_NORTH]);
-      }
-    }
-    return out.length? out : pts;
-  }
-  /* River strokes stop at a larger body. A river may run through its own estuary. */
-  var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1,"Mobile Bay":1};
-  function riverInLargerWater(name, lon, lat){
-    var i, L, own=name+" estuary";
-    for(i=0;i<LAKES.length;i++){
-      L=LAKES[i];
-      if(L.name===own) continue;
-      if(OPEN_WATER_NAMES[L.name] || / estuary$/.test(L.name)){
-        if(lonlatInPoly(lon, lat, L.pts)) return true;
-      }
-    }
-    return false;
-  }
-  function drawRiver(name, pts){
-    var i, p, s, drawing=false;
-    pts=clipRiverPts(pts);
-    ctx.beginPath();
-    for(i=0;i<pts.length;i++){
-      if(riverInLargerWater(name, pts[i][0], pts[i][1])){
-        if(drawing){ ctx.stroke(); ctx.beginPath(); drawing=false; }
-        continue;
-      }
-      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
-      if(!drawing){ ctx.moveTo(s.x,s.y); drawing=true; }
-      else ctx.lineTo(s.x,s.y);
-    }
-    if(drawing) ctx.stroke();
-  }
-  function roundRect(x, y, w, h, r){
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.arcTo(x+w, y, x+w, y+h, r);
-    ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-  }
-  function drawResChip(x, y, kind){
-    var spec=RES_CHIP[kind]||RES_CHIP["iron-ore"], s=ICON, m=2.2;
-    ctx.save();
-    ctx.fillStyle="#f4ead0";
-    ctx.strokeStyle=spec.border;
-    ctx.lineWidth=1.4;
-    roundRect(x+0.5, y+0.5, s-1, s-1, 2.2);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle=spec.ink;
-    if(kind==="charcoal"){
-      ctx.fillRect(x+m, y+s*0.38, s-2*m, s*0.16);
-      ctx.fillRect(x+m+0.6, y+s*0.56, s-2*m-1.2, s*0.15);
-      ctx.fillRect(x+m+1.2, y+s*0.22, s-2*m-2.4, s*0.14);
-    } else {
-      ctx.beginPath(); ctx.arc(x+s*0.34, y+s*0.58, s*0.13, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x+s*0.56, y+s*0.40, s*0.14, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x+s*0.72, y+s*0.60, s*0.12, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-  function drawStationHex(ps){
-    var rad=Math.max(18, HEX_MI*cam.scale*0.52);
-    ctx.save();
-    ctx.strokeStyle="rgba(44,34,20,.45)";
-    ctx.lineWidth=0.9;
-    ctx.setLineDash([3, 2.4]);
-    hexPoly(ps.x, ps.y, rad);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-  function drawStations(){
-    var i, st, pw, ps, res, n, rowW, x0, y0, k, nameX;
-    if(cam.scale<6) return;
-    ctx.save();
-    for(i=0;i<STATIONS.length;i++){
-      st=STATIONS[i];
-      pw=lonlatToWorld(st.lon, st.lat);
-      ps=worldToScreen(pw.x, pw.y);
-      if(ps.x<-80||ps.x>stage.clientWidth+80||ps.y<-40||ps.y>stage.clientHeight+40) continue;
-      drawStationHex(ps);
-      res=st.res||[];
-      n=res.length;
-      rowW=n? n*ICON+(n-1)*ICON_GAP : 0;
-      ctx.font='italic 13px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-    
+  function worldToScreen(wx, wy){
+    return {x:(wx
