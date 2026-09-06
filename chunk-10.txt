@@ -1,4 +1,6 @@
-,w-1),Math.max(1,h-1));
+ite"?1.8:1.4);
+      ctx.fillRect(x,y,w,h);
+      ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
       drawHexes(s);
       if(w<8 || h<8){
         pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
@@ -14,7 +16,12 @@
         ctx.fillStyle="#2c2214";
         ctx.textAlign="center";
         ctx.textBaseline="middle";
-        if(w>54){
+        if(siteClose){
+          ctx.textAlign="left";
+          ctx.textBaseline="bottom";
+          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+          ctx.fillText(s.id+" · "+s.name, x+4, y-5);
+        } else if(w>54){
           ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
           ctx.fillText(s.id, x+w/2, y+h/2-7);
           ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
@@ -78,16 +85,4 @@
     var r=cv.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
     if(panning && lastPan){
       var dx=ev.clientX-lastPan.x, dy=ev.clientY-lastPan.y;
-      if(Math.abs(dx)+Math.abs(dy)>3) panMoved=true;
-      cam.x-=dx/cam.scale;
-      cam.y+=dy/cam.scale;
-      lastPan={x:ev.clientX,y:ev.clientY};
-      draw();
-    } else {
-      hover=hitSheet(x,y);
-      setStatus(hover);
-      draw();
-    }
-  });
-  function endPan(ev){
-    if(panning && ev.type==="pointerup" && !panMoved){
+      if(Math
