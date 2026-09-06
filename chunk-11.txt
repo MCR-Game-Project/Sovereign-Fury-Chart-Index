@@ -1,4 +1,16 @@
-
+.abs(dx)+Math.abs(dy)>3) panMoved=true;
+      cam.x-=dx/cam.scale;
+      cam.y+=dy/cam.scale;
+      lastPan={x:ev.clientX,y:ev.clientY};
+      draw();
+    } else {
+      hover=hitSheet(x,y);
+      setStatus(hover);
+      draw();
+    }
+  });
+  function endPan(ev){
+    if(panning && ev.type==="pointerup" && !panMoved){
       var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
       if(s){ fitSheets([s], 0.35); setStatus(s); }
     }
@@ -23,7 +35,7 @@
     x0-=pad; y0-=pad; x1+=pad; y1+=pad;
     var W=stage.clientWidth, H=stage.clientHeight;
     cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
-    cam.scale=Math.max(MIN_SCALE, Math.min(80, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    cam.scale=Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
     draw();
   }
   function fitAll(){
@@ -42,10 +54,18 @@
   document.getElementById("fitdc").onclick=function(){
     fitSheets(SHEETS.filter(function(s){ return s.kind==="plate"; }), 2);
   };
-  document.getElementById("fityt").onclick=function(){
+  function fitYorktown(){
     var s=SHEETS.filter(function(x){ return x.id==="YT-00"; })[0];
-    fitSheets([s], 0.35); setStatus(s);
-  };
+    /* Yorktown as drawn on the Chart Index: York River, the site, the mouth, Hampton Roads. */
+    fitLonlats([
+      [-76.80, 37.50],
+      [-76.26, 36.93],
+      [-76.20, 37.28],
+      [-76.68, 37.16]
+    ], 3);
+    setStatus(s);
+  }
+  document.getElementById("fityt").onclick=fitYorktown;
   document.getElementById("fitpr").onclick=function(){
     var s=SHEETS.filter(function(x){ return x.id==="PR-00"; })[0];
     /* Port Royal on the Rappahannock; show the run to Chesapeake water shared with the Potomac. */
@@ -71,10 +91,12 @@
     illinois:[[-90.75,39.15],[-90.25,38.80]],
     mobile:[[-88.35,30.85],[-87.70,30.10]],
     delta:[[-90.55,30.15],[-88.90,28.85]],
-    north:[[-100.2,43.55],[-70.8,42.85]]
+    north:[[-100.2,43.55],[-70.8,42.85]],
+    yt:[[-76.80,37.50],[-76.26,36.93],[-76.20,37.28],[-76.68,37.16]]
   };
   function applyHashFit(){
     var key=(location.hash+location.search).replace(/[#?&=]/g,"").toLowerCase();
+    if(key==="yt"){ fitYorktown(); return; }
     if(HASH_FITS[key]) fitLonlats(HASH_FITS[key], 0.6);
     else fitAll();
   }
