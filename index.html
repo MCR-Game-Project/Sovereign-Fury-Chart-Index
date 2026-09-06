@@ -11,16 +11,27 @@
 <script>
 (async function(){
   var n=12, boot=document.getElementById("boot");
-  try{
+  var bases=[
+    "https://cdn.jsdelivr.net/gh/MCR-Game-Project/Sovereign-Fury-Chart-Index@cbbc4647e2934198786b9f411e2afe9a9297682d/",
+    "https://raw.githubusercontent.com/MCR-Game-Project/Sovereign-Fury-Chart-Index/cbbc4647e2934198786b9f411e2afe9a9297682d/"
+  ];
+  async function loadFrom(base){
     var parts=await Promise.all(Array.from({length:n},function(_,i){
-      return fetch("chunk-"+i+".txt?v=north").then(function(r){
+      return fetch(base+"chunk-"+i+".txt",{cache:"no-store"}).then(function(r){
         if(!r.ok) throw new Error("chunk "+i);
         return r.text();
       });
     }));
-    document.open();
-    document.write(parts.join(""));
-    document.close();
+    return parts.join("");
+  }
+  try{
+    var html=null, i, err;
+    for(i=0;i<bases.length && !html;i++){
+      try{ html=await loadFrom(bases[i]); }catch(e){ err=e; }
+    }
+    if(!html) throw err||new Error("load");
+    var url=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+    location.replace(url+(location.hash||""));
   }catch(e){
     if(boot) boot.textContent="Could not load the chart. Try this page again in a moment.";
   }
