@@ -1,4 +1,4 @@
-extAlign="left"; ctx.textBaseline="middle";
+  ctx.textAlign="left"; ctx.textBaseline="middle";
       /* Name starts at the last drawn chip's right edge — never after a reserved empty slot. */
       nameX=n? (n-1)*(ICON+ICON_GAP)+ICON+NAME_GAP : 0;
       x0=ps.x-(nameX+ctx.measureText(st.name).width)/2;
@@ -24,7 +24,7 @@ extAlign="left"; ctx.textBaseline="middle";
   }
   function drawHexes(s){
     var b=sheetWorld(s), pxPerHex=HEX_MI*cam.scale;
-    if(pxPerHex<5) return;
+    if(pxPerHex<3) return;
     var origin=lonlatToWorld(s.box.w, s.box.s);
     var view=screenToWorld(0,0), view2=screenToWorld(stage.clientWidth, stage.clientHeight);
     var minX=Math.min(view.x,view2.x), maxX=Math.max(view.x,view2.x);
@@ -97,8 +97,7 @@ extAlign="left"; ctx.textBaseline="middle";
       s=SHEETS[i]; b=sheetWorld(s);
       a=worldToScreen(b.x0,b.y1); c=worldToScreen(b.x1,b.y0);
       var x=Math.min(a.x,c.x), y=Math.min(a.y,c.y), w=Math.abs(c.x-a.x), h=Math.abs(c.y-a.y);
-      ctx.fillStyle=s.fill;
+      var siteClose=s.kind==="site" && w>36;
+      ctx.fillStyle=siteClose? "rgba(138,51,32,.07)" : s.fill;
       ctx.strokeStyle=s===hover? "#8a3320" : (s.kind==="site"?"#8a3320":"#8a6a2a");
-      ctx.lineWidth=s===hover?2.4:(s.kind==="site"?1.8:1.4);
-      ctx.fillRect(x,y,w,h);
-      ctx.strokeRect(x+0.5,y+0.5,Math.max(1
+      ctx.lineWidth=s===hover?2.4:(s.kind==="s
