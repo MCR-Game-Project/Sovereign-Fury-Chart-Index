@@ -1,4 +1,5 @@
-starts at the last drawn chip's right edge — never after a reserved empty slot. */
+extAlign="left"; ctx.textBaseline="middle";
+      /* Name starts at the last drawn chip's right edge — never after a reserved empty slot. */
       nameX=n? (n-1)*(ICON+ICON_GAP)+ICON+NAME_GAP : 0;
       x0=ps.x-(nameX+ctx.measureText(st.name).width)/2;
       y0=ps.y-ICON/2;
@@ -100,6 +101,4 @@ starts at the last drawn chip's right edge — never after a reserved empty slot
       ctx.strokeStyle=s===hover? "#8a3320" : (s.kind==="site"?"#8a3320":"#8a6a2a");
       ctx.lineWidth=s===hover?2.4:(s.kind==="site"?1.8:1.4);
       ctx.fillRect(x,y,w,h);
-      ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
-      drawHexes(s);
-      if(w<8 |
+      ctx.strokeRect(x+0.5,y+0.5,Math.max(1
