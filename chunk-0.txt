@@ -82,4 +82,5 @@
     var dLon=miW/2/miPerDegLon(lat), dLat=miH/2/MI_PER_DEG_LAT;
     return {w:lon-dLon, e:lon+dLon, s:lat-dLat, n:lat+dLat};
   }
-  function plateBox(westLon, sout
+  function plateBox(westLon, southLat){
+    return 
