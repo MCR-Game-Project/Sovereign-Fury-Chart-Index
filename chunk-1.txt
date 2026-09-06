@@ -49,7 +49,7 @@
     {name:"Fredericksburg", lon:-77.4605, lat:38.3032, z:0.6},
     {name:"Port Royal", lon:-77.1910, lat:38.1700, z:0.4},
     {name:"Yorktown", lon:-76.5085, lat:37.2389, z:0.4},
-    {name:"Fort Monroe", lon:-76.3080, lat:37.0037, z:0.5}
+    {name:"Fort Francisco", lon:-76.3080, lat:37.0037, z:0.5}
   ];
 
   /* Theatre land: Natural Earth 50m, clipped NM–Great Lakes–Boston–Gulf–Keys. March 1861 water only. */
