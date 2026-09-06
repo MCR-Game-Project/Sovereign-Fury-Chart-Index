@@ -1,0 +1,102 @@
+strokeStyle="#2c2214"; ctx.fillStyle="#2c2214"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+barPx,by); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx,by-4); ctx.lineTo(bx,by+4); ctx.moveTo(bx+barPx,by-4); ctx.lineTo(bx+barPx,by+4); ctx.stroke();
+    ctx.font='700 10px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+    ctx.textAlign="center"; ctx.textBaseline="bottom";
+    ctx.fillText(barMi>=1? (barMi+" mi") : (Math.round(barMi*1760)+" yd"), bx+barPx/2, by-6);
+
+    ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillText("N", 18, 16);
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(22,52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(18,40); ctx.lineTo(26,40); ctx.closePath(); ctx.fill();
+  }
+  function setStatus(s){
+    var place=document.getElementById("statplace");
+    var size=document.getElementById("statsize");
+    var hex=document.getElementById("stathex");
+    if(!s){
+      place.innerHTML="<b>Place</b> —";
+      size.innerHTML="<b>Size</b> —";
+      hex.innerHTML="<b>Hexes</b> —";
+      return;
+    }
+    place.innerHTML="<b>Place</b> "+s.id+" · "+s.name;
+    size.innerHTML="<b>Size</b> "+s.hex.miW.toFixed(2)+" × "+s.hex.miH.toFixed(2)+" mi";
+    hex.innerHTML="<b>Hexes</b> "+s.hex.cols+" × "+s.hex.rows+" · "+YDS+" yd/hex";
+  }
+
+  cv.addEventListener("pointerdown", function(ev){
+    panning=true; panMoved=false; lastPan={x:ev.clientX,y:ev.clientY}; cv.classList.add("panning");
+    cv.setPointerCapture(ev.pointerId);
+  });
+  cv.addEventListener("pointermove", function(ev){
+    var r=cv.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
+    if(panning && lastPan){
+      var dx=ev.clientX-lastPan.x, dy=ev.clientY-lastPan.y;
+      if(Math.abs(dx)+Math.abs(dy)>3) panMoved=true;
+      cam.x-=dx/cam.scale;
+      cam.y+=dy/cam.scale;
+      lastPan={x:ev.clientX,y:ev.clientY};
+      draw();
+    } else {
+      hover=hitSheet(x,y);
+      setStatus(hover);
+      draw();
+    }
+  });
+  function endPan(ev){
+    if(panning && ev.type==="pointerup" && !panMoved){
+      var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
+      if(s){ fitSheets([s], 0.35); setStatus(s); }
+    }
+    panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
+  }
+  cv.addEventListener("pointerup", endPan);
+  cv.addEventListener("pointercancel", endPan);
+  cv.addEventListener("wheel", function(ev){
+    ev.preventDefault();
+    var r=cv.getBoundingClientRect();
+    zoomAt(ev.clientX-r.left, ev.clientY-r.top, ev.deltaY<0?1.18:1/1.18);
+  }, {passive:false});
+
+  function fitLonlats(pts, pad){
+    var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(i=0;i<pts.length;i++){
+      p=lonlatToWorld(pts[i][0], pts[i][1]);
+      if(p.x<x0) x0=p.x; if(p.y<y0) y0=p.y;
+      if(p.x>x1) x1=p.x; if(p.y>y1) y1=p.y;
+    }
+    pad=pad==null?40:pad;
+    x0-=pad; y0-=pad; x1+=pad; y1+=pad;
+    var W=stage.clientWidth, H=stage.clientHeight;
+    cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
+    cam.scale=Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    draw();
+  }
+  function fitAll(){
+    /* NM west · Chicago · Boston · South Texas · Key West */
+    fitLonlats([
+      [-109.40, 31.33],
+      [-109.05, 36.99],
+      [-87.6298, 41.8781],
+      [-71.0589, 42.3601],
+      [-69.40, 42.20],
+      [-81.7799, 24.5551],
+      [-97.4975, 25.9017]
+    ], 60);
+  }
+  document.getElementById("fitall").onclick=fitAll;
+  document.getElementById("fitdc").onclick=function(){
+    fitSheets(SHEETS.filter(function(s){ return s.kind==="plate"; }), 2);
+  };
+  function fitYorktown(){
+    var s=SHEETS.filter(function(x){ return x.id==="YT-00"; })[0];
+    /* Yorktown as drawn on the Chart Index: York River, the site, the mouth, Hampton Roads. */
+    fitLonlats([
+      [-76.80, 37.50],
+      [-76.26, 36.93],
+      [-76.20, 37.28],
+      [-76.68, 37.16]
+    ], 3);
+    setStatus(s);
