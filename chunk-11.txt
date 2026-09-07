@@ -1,17 +1,4 @@
-tyle="#7ea0c4";
-    ctx.fillRect(0,0,W,H);
-
-    ctx.fillStyle="#e4d6b0";
-    ctx.strokeStyle="rgba(90,74,48,.22)";
-    ctx.lineWidth=Math.max(0.6, Math.min(1.6, 0.04*cam.scale));
-    ctx.lineJoin="round";
-    for(i=0;i<LAND.length;i++){
-      drawPath(LAND[i].pts, true);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    ctx.fillStyle="#7ea0c4";
+  ctx.fillStyle="#7ea0c4";
     ctx.strokeStyle="rgba(45,74,99,.35)";
     ctx.lineWidth=Math.max(0.6, Math.min(1.8, 0.04*cam.scale));
     for(i=0;i<LAKES.length;i++){
@@ -36,48 +23,25 @@ tyle="#7ea0c4";
     }
 
     for(i=0;i<SHEETS.length;i++){
-      s=SHEETS[i]; b=sheetWorld(s);
-      a=worldToScreen(b.x0,b.y1); c=worldToScreen(b.x1,b.y0);
-      var x=Math.min(a.x,c.x), y=Math.min(a.y,c.y), w=Math.abs(c.x-a.x), h=Math.abs(c.y-a.y);
-      var siteClose=s.kind==="site" && w>36;
-      var ytPaint=s.id==="YT-00" && drawYorktownPlate(s, x, y, w, h);
-      if(!ytPaint){
-        ctx.fillStyle=siteClose? "rgba(138,51,32,.07)" : s.fill;
+      s=SHEETS[i];
+      var r=sheetDisplayRect(s);
+      var x=r.x, y=r.y, w=r.w, h=r.h;
+      var painted=false;
+      if(s.id==="YT-00") painted=drawYorktownPlate(s, x, y, w, h);
+      else if(s.plateReady){ ctx.drawImage(s.plateImg, x, y, w, h); painted=true; }
+      if(!painted){
+        ctx.fillStyle=s.kind==="site"? "rgba(138,51,32,.18)" : "rgba(228,214,176,.92)";
         ctx.fillRect(x,y,w,h);
+        if(!r.grown) drawHexes(s);
       }
       ctx.strokeStyle=s===hover? "#8a3320" : (s.kind==="site"?"#8a3320":"#8a6a2a");
-      ctx.lineWidth=s===hover?2.4:(s.kind==="site"?1.8:1.4);
+      ctx.lineWidth=s===hover?2.4:(r.grown?2:1.5);
       ctx.strokeRect(x+0.5,y+0.5,Math.max(1,w-1),Math.max(1,h-1));
-      if(!ytPaint) drawHexes(s);
-      if(w<8 || h<8){
-        pin=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
-        ctx.fillStyle="#8a3320";
-        ctx.beginPath(); ctx.arc(pin.x, pin.y, cam.scale<1?3:4.5, 0, Math.PI*2); ctx.fill();
-        if(cam.scale>=1){
-        ctx.fillStyle="#2c2214";
-        ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-        ctx.textAlign="left"; ctx.textBaseline="middle";
-        ctx.fillText(s.id+" · "+s.name, pin.x+8, pin.y);
-        }
-      } else {
-        ctx.fillStyle="#2c2214";
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
-        if(siteClose || ytPaint){
-          ctx.textAlign="left";
-          ctx.textBaseline="bottom";
-          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
-          ctx.fillText(s.id+" · "+s.name, x+4, y-5);
-        } else if(w>54){
-          ctx.font='700 12px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
-          ctx.fillText(s.id, x+w/2, y+h/2-7);
-          ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-          ctx.fillText(s.name, x+w/2, y+h/2+8);
-        } else {
-          ctx.font='700 9px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
-          ctx.fillText(s.id, x+w/2, y+h/2);
-        }
-      }
+      ctx.fillStyle="#2c2214";
+      ctx.textAlign="left";
+      ctx.textBaseline="bottom";
+      ctx.font=(w>=54?'700 12px ':'700 9px ')+'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+      ctx.fillText(w>=54? s.id+" · "+s.name : s.id, x+3, y-4);
     }
 
     for(i=0;i<PLACES.length;i++){
@@ -96,4 +60,29 @@ tyle="#7ea0c4";
     drawStations();
 
     var barMi=niceMiles(110), barPx=barMi*cam.scale, bx=W-24-barPx, by=H-22;
-    ctx.
+    ctx.strokeStyle="#2c2214"; ctx.fillStyle="#2c2214"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+barPx,by); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx,by-4); ctx.lineTo(bx,by+4); ctx.moveTo(bx+barPx,by-4); ctx.lineTo(bx+barPx,by+4); ctx.stroke();
+    ctx.font='700 10px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+    ctx.textAlign="center"; ctx.textBaseline="bottom";
+    ctx.fillText(barMi>=1? (barMi+" mi") : (Math.round(barMi*1760)+" yd"), bx+barPx/2, by-6);
+
+    ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillText("N", 18, 16);
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(22,52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(18,40); ctx.lineTo(26,40); ctx.closePath(); ctx.fill();
+  }
+  function setStatus(s){
+    var place=document.getElementById("statplace");
+    var size=document.getElementById("statsize");
+    var hex=document.getElementById("stathex");
+    if(!s){
+      place.innerHTML="<b>Place</b> —";
+      size.innerHTML="<b>Size</b> —";
+      hex.innerHTML="<b>Hexes</b> —";
+      return;
+    }
+    place.innerHTML="<b>Place</b> "+s.id+" · "+s.name;
+    size.innerHTML="<b>Size</b> "+s.hex.miW.toFixed(2)+" × "+s.hex.miH.toFixed(2)+" mi";
+    hex.innerHTML="<b>Hexes</b> "+s.hex.cols+" × "+s
