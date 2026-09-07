@@ -1,4 +1,25 @@
-",Palatino,Georgia,serif';
+ba(44,34,20,.45)";
+    ctx.lineWidth=0.9;
+    ctx.setLineDash([3, 2.4]);
+    hexPoly(ps.x, ps.y, rad);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  function drawStations(){
+    var i, st, pw, ps, res, n, rowW, x0, y0, k, nameX;
+    if(cam.scale<6) return;
+    ctx.save();
+    for(i=0;i<STATIONS.length;i++){
+      st=STATIONS[i];
+      pw=lonlatToWorld(st.lon, st.lat);
+      ps=worldToScreen(pw.x, pw.y);
+      if(ps.x<-80||ps.x>stage.clientWidth+80||ps.y<-40||ps.y>stage.clientHeight+40) continue;
+      drawStationHex(ps);
+      res=st.res||[];
+      n=res.length;
+      rowW=n? n*ICON+(n-1)*ICON_GAP : 0;
+      ctx.font='italic 13px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
       ctx.textAlign="left"; ctx.textBaseline="middle";
       /* Name starts at the last drawn chip's right edge — never after a reserved empty slot. */
       nameX=n? (n-1)*(ICON+ICON_GAP)+ICON+NAME_GAP : 0;
@@ -88,20 +109,4 @@
     ctx.textAlign="center"; ctx.textBaseline="middle";
     for(i=0;i<WATER_LABELS.length;i++){
       lab=WATER_LABELS[i];
-      if(cam.scale<lab.z*3.2 && lab.z>0) continue;
-      var lw=lonlatToWorld(lab.lon, lab.lat), ls=worldToScreen(lw.x, lw.y);
-      ctx.font=(lab.z===0?'italic 13px ':'italic 11px ')+'"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-      ctx.fillText(lab.name, ls.x, ls.y);
-    }
-
-    for(i=0;i<SHEETS.length;i++){
-      s=SHEETS[i];
-      var r=sheetDisplayRect(s);
-      var x=r.x, y=r.y, w=r.w, h=r.h;
-      var painted=false;
-      if(s.id==="YT-00") painted=drawYorktownPlate(s, x, y, w, h);
-      else if(s.plateReady){ ctx.drawImage(s.plateImg, x, y, w, h); painted=true; }
-      if(!painted){
-        ctx.fillStyle=s.kind==="site"? "rgba(138,51,32,.18)" : "rgba(228,214,176,.92)";
-        ctx.fillRect(x,y,w,h);
-        
+      if(cam.scale<lab.z*3.2 && lab.z>0) continu
