@@ -1,4 +1,20 @@
-if(!r.grown) drawHexes(s);
+e;
+      var lw=lonlatToWorld(lab.lon, lab.lat), ls=worldToScreen(lw.x, lw.y);
+      ctx.font=(lab.z===0?'italic 13px ':'italic 11px ')+'"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+      ctx.fillText(lab.name, ls.x, ls.y);
+    }
+
+    for(i=0;i<SHEETS.length;i++){
+      s=SHEETS[i];
+      var r=sheetDisplayRect(s);
+      var x=r.x, y=r.y, w=r.w, h=r.h;
+      var painted=false;
+      if(s.id==="YT-00") painted=drawYorktownPlate(s, x, y, w, h);
+      else if(s.plateReady){ ctx.drawImage(s.plateImg, x, y, w, h); painted=true; }
+      if(!painted){
+        ctx.fillStyle=s.kind==="site"? "rgba(138,51,32,.18)" : "rgba(228,214,176,.92)";
+        ctx.fillRect(x,y,w,h);
+        if(!r.grown) drawHexes(s);
       }
       ctx.strokeStyle=s===hover? "#8a3320" : (s.kind==="site"?"#8a3320":"#8a6a2a");
       ctx.lineWidth=s===hover?2.4:(r.grown?2:1.5);
@@ -69,24 +85,4 @@ if(!r.grown) drawHexes(s);
       draw();
     } else {
       hover=hitSheet(x,y);
-      setStatus(hover);
-      draw();
-    }
-  });
-  function endPan(ev){
-    if(panning && ev.type==="pointerup" && !panMoved){
-      var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
-      if(s){ fitSheets([s], 0.35); setStatus(s); }
-    }
-    panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
-  }
-  cv.addEventListener("pointerup", endPan);
-  cv.addEventListener("pointercancel", endPan);
-  cv.addEventListener("wheel", function(ev){
-    ev.preventDefault();
-    var r=cv.getBoundingClientRect();
-    zoomAt(ev.clientX-r.left, ev.clientY-r.top, ev.deltaY<0?1.18:1/1.18);
-  }, {passive:false});
-
-  function fitLonlats(pts, pad){
-    var i, p, x0=1e9,y0=1e9
+      setStatus(hover
