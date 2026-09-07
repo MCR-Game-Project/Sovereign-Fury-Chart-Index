@@ -24,11 +24,11 @@
   }
 
   var SHEETS=[
-    {id:"DC-00", name:"Washington", kind:"plate", box:DC, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"FC-00", name:"Falls Church", kind:"plate", box:FC, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"OA-01", name:"Alexandria South", kind:"plate", box:OA01, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"OA-02", name:"Springfield", kind:"plate", box:OA02, href:null, fill:"rgba(201,154,69,.22)"},
-    {id:"YT-00", name:"Yorktown", kind:"site", box:YT, href:null, fill:"rgba(138,51,32,.28)"},
+    {id:"DC-00", name:"Washington", kind:"plate", box:DC, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/dc-00-chart.jpg"},
+    {id:"FC-00", name:"Falls Church", kind:"plate", box:FC, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/fc-00-chart.jpg"},
+    {id:"OA-01", name:"Alexandria South", kind:"plate", box:OA01, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/oa-01-chart.jpg"},
+    {id:"OA-02", name:"Springfield", kind:"plate", box:OA02, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/oa-02-chart.jpg"},
+    {id:"YT-00", name:"Yorktown", kind:"site", box:YT, href:null, fill:"rgba(138,51,32,.28)", img:"underlays/yt-00-yorktown.jpg"},
     {id:"PR-00", name:"Port Royal", kind:"site", box:PR, href:null, fill:"rgba(138,51,32,.28)"}
   ];
   SHEETS.forEach(function(s){ s.hex=sheetHexes(s.box); });
@@ -45,7 +45,6 @@
   var YT_LIGHT=[[13,0],[14,0],[15,0],[14,1],[15,1],[2,8],[3,8],[2,9],[3,9],[3,10],[8,10],[8,11],[9,10],[9,11],[12,13],[13,13],[12,14],[13,14]];
   var YT_CORN=[[9,9],[10,9],[11,9],[2,7],[3,7],[4,7]];
   var YT_BEAN=[[8,7]];
-  var YT_ROAD=[[10,6],[10,7],[10,8],[10,9],[10,10],[9,11],[9,12],[9,13],[8,14],[8,15]];
   var YT_SET=function(list){
     var o={}, i; for(i=0;i<list.length;i++) o[list[i][0]+","+list[i][1]]=1; return o;
   };
@@ -65,26 +64,28 @@
     if(r>=16) return 20;
     return 40;
   }
-  var ytPlateImg=null, ytPlateReady=false;
-  (function loadYtPlate(){
-    var urls=[
-      "underlays/yt-00-yorktown.jpg",
-      "https://cdn.jsdelivr.net/gh/MCR-Game-Project/Sovereign-Fury-Chart-Index@main/yt-00-yorktown.jpg?v=yt2",
-      "https://raw.githubusercontent.com/MCR-Game-Project/Sovereign-Fury-Chart-Index/main/yt-00-yorktown.jpg?v=yt2",
-      "https://cdn.jsdelivr.net/gh/MCR-Game-Project/Sovereign-Fury@cursor/geographic-chart-index-7458/app/underlays/yt-00-yorktown.jpg"
+  var MIN_PLATE=36, MIN_BLOCK=56;
+  var PLATE_BLOCK=["FC-00","DC-00","OA-02","OA-01"];
+  function plateUrls(file){
+    var name=file.split("/").pop();
+    return [
+      file,
+      "https://cdn.jsdelivr.net/gh/MCR-Game-Project/Sovereign-Fury-Chart-Index@main/"+name+"?v=yt3",
+      "https://raw.githubusercontent.com/MCR-Game-Project/Sovereign-Fury-Chart-Index/main/"+name+"?v=yt3"
     ];
-    var i=0, img;
+  }
+  function loadSheetImage(s){
+    if(!s.img) return;
+    var urls=plateUrls(s.img), i=0, img;
     function next(){
       if(i>=urls.length) return;
       img=new Image();
-      img.onload=function(){ ytPlateImg=img; ytPlateReady=true; if(cv && cv.width) draw(); };
+      img.onload=function(){ s.plateImg=img; s.plateReady=true; if(cv && cv.width) draw(); };
       img.onerror=function(){ i++; next(); };
       img.src=urls[i];
     }
     next();
-  })();
-  function ytHexCenter(b, c, r){
-    var Rmi=(b.x1-b.x0)/(1.5*(YT_COLS-1)+2);
-    var HH=Rmi*SQRT3;
-    return {
-      x:
+  }
+  SHEETS.forEach(loadSheetImage);
+  var ytThumb=null;
+  function york
