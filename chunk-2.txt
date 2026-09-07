@@ -1,4 +1,4 @@
-TE_BLOCK=["FC-00","DC-00","OA-02","OA-01"];
+","OA-01"];
   function plateUrls(file){
     var name=file.split("/").pop();
     return [
@@ -58,50 +58,60 @@ TE_BLOCK=["FC-00","DC-00","OA-02","OA-01"];
     var b=sheetWorld(s), Rmi=(b.x1-b.x0)/(1.5*(YT_COLS-1)+2), HH=Rmi*SQRT3;
     return {x:b.x0+Rmi+1.5*Rmi*c, y:b.y1-(HH/2+HH*r+((c&1)?HH/2:0)), R:Rmi};
   }
+  function ytHexPath(s, c, r){
+    var h=ytHexCenter(s,c,r), i, a, p;
+    ctx.beginPath();
+    for(i=0;i<6;i++){
+      a=Math.PI/180*60*i;
+      p=worldToScreen(h.x+h.R*Math.cos(a), h.y-h.R*Math.sin(a));
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
+    return h;
+  }
+  function clipYorktownLand(s){
+    var b=sheetWorld(s), nw=worldToScreen(b.x0,b.y1), se=worldToScreen(b.x1,b.y0);
+    var i, p, q;
+    ctx.beginPath();
+    ctx.rect(nw.x, nw.y, se.x-nw.x, se.y-nw.y);
+    for(i=0;i<YORK_ESTUARY.length;i++){
+      p=lonlatToWorld(YORK_ESTUARY[i][0], YORK_ESTUARY[i][1]);
+      q=worldToScreen(p.x, p.y);
+      if(i===0) ctx.moveTo(q.x,q.y); else ctx.lineTo(q.x,q.y);
+    }
+    ctx.closePath();
+    ctx.clip("evenodd");
+  }
   function drawYorktownLand(s){
-    var c, r, h, p, a, i;
+    var c, r, h, p, i, started;
+    ctx.save();
+    clipYorktownLand(s);
     for(r=0;r<YT_ROWS;r++){
       for(c=0;c<YT_COLS;c++){
         if(ytCell(c,r)==="W") continue;
-        h=ytHexCenter(s,c,r);
-        ctx.beginPath();
-        for(i=0;i<6;i++){
-          a=Math.PI/180*60*i;
-          p=worldToScreen(h.x+h.R*Math.cos(a), h.y-h.R*Math.sin(a));
-          if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
-        }
-        ctx.closePath();
+        ytHexPath(s,c,r);
         ctx.fillStyle=ytFill(c,r);
         ctx.fill();
-        ctx.strokeStyle="rgba(90,74,50,.22)";
-        ctx.lineWidth=0.5;
+      }
+    }
+    ctx.restore();
+    ctx.strokeStyle="rgba(90,74,50,.22)";
+    ctx.lineWidth=0.5;
+    for(r=0;r<YT_ROWS;r++){
+      for(c=0;c<YT_COLS;c++){
+        ytHexPath(s,c,r);
         ctx.stroke();
       }
     }
     /* Yorktown Creek: land hexsides, inland south → mouth on the York south bank. */
     ctx.strokeStyle="#2e5c88";
-    ctx.lineWidth=Math.max(1.2, HEX_MI*cam.scale*0.14);
+    ctx.lineWidth=Math.max(0.8, Math.min(2.4, HEX_MI*cam.scale*0.08));
     ctx.lineCap="round"; ctx.lineJoin="round";
     ctx.beginPath();
     var creek=[[7,4],[7,6],[7,8],[7,10],[7,12],[6,14],[6,16]];
+    started=false;
     for(i=0;i<creek.length;i++){
       if(ytIsWater(creek[i][0], creek[i][1])) continue;
       h=ytHexCenter(s, creek[i][0], creek[i][1]);
       p=worldToScreen(h.x,h.y);
-      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
-    }
-    ctx.stroke();
-    if(HEX_MI*cam.scale>=7){
-      ctx.fillStyle="#2c2214";
-      ctx.font='700 12px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-      ctx.textAlign="center"; ctx.textBaseline="middle";
-      h=ytHexCenter(s,9,8); p=worldToScreen(h.x,h.y);
-      ctx.fillText("Yorktown", p.x, p.y);
-      ctx.fillStyle="#5a3410";
-      ctx.font='italic 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-      h=ytHexCenter(s,14,0); p=worldToScreen(h.x,h.y);
-      ctx.fillText("Gloucester Pt.", p.x, p.y);
-    }
-  }
-  function drawYorktownPlate(s, x, y, w, h){
-    var r=shee
+      if(!st
