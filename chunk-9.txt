@@ -1,11 +1,4 @@
--cam.x)*cam.scale+stage.clientWidth/2, y:(cam.y-wy)*cam.scale+stage.clientHeight/2};
-  }
-  function screenToWorld(sx, sy){
-    return {x:cam.x+(sx-stage.clientWidth/2)/cam.scale, y:cam.y-(sy-stage.clientHeight/2)/cam.scale};
-  }
-  function sheetWorld(s){
-    var sw=lonlatToWorld(s.box.w, s.box.s), ne=lonlatToWorld(s.box.e, s.box.n);
-    return {x0:sw.x, y0:sw.y, x1:ne.x, y1:ne.y};
+;
   }
   function zoomAt(sx, sy, factor){
     var w=screenToWorld(sx,sy);
@@ -29,16 +22,19 @@
     draw();
   }
   function hitSheet(sx, sy){
-    var w=screenToWorld(sx,sy), i, b, c, d, best=null, bestD=16;
+    var i, r, d, best=null, bestD=1e9;
     for(i=SHEETS.length-1;i>=0;i--){
-      b=sheetWorld(SHEETS[i]);
-      if(w.x>=b.x0 && w.x<=b.x1 && w.y>=b.y0 && w.y<=b.y1) return SHEETS[i];
+      r=sheetDisplayRect(SHEETS[i]);
+      if(sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h){
+        d=Math.hypot(sx-(r.x+r.w/2), sy-(r.y+r.h/2));
+        if(d<bestD){ bestD=d; best=SHEETS[i]; }
+      }
     }
+    if(best) return best;
     for(i=0;i<SHEETS.length;i++){
-      b=sheetWorld(SHEETS[i]);
-      c=worldToScreen((b.x0+b.x1)/2,(b.y0+b.y1)/2);
-      d=Math.hypot(sx-c.x, sy-c.y);
-      if(d<bestD){ bestD=d; best=SHEETS[i]; }
+      r=sheetDisplayRect(SHEETS[i]);
+      d=Math.hypot(sx-(r.x+r.w/2), sy-(r.y+r.h/2));
+      if(d<20 && d<bestD){ bestD=d; best=SHEETS[i]; }
     }
     return best;
   }
@@ -114,4 +110,14 @@
     ctx.moveTo(x+r, y);
     ctx.arcTo(x+w, y, x+w, y+h, r);
     ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, 
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+  function drawResChip(x, y, kind){
+    var spec=RES_CHIP[kind]||RES_CHIP["iron-ore"], s=ICON, m=2.2;
+    ctx.save();
+    ctx.fillStyle="#f4ead0";
+    ctx.strokeStyle=spec.border;
+    ctx.lineWidth=1.4;
+    roundRect(x+0.5, y+0.5, s-1, s-1, 
