@@ -1,29 +1,4 @@
-strokeStyle="#2c2214"; ctx.fillStyle="#2c2214"; ctx.lineWidth=1.4;
-    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+barPx,by); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(bx,by-4); ctx.lineTo(bx,by+4); ctx.moveTo(bx+barPx,by-4); ctx.lineTo(bx+barPx,by+4); ctx.stroke();
-    ctx.font='700 10px ui-monospace,"SF Mono",Menlo,Consolas,monospace';
-    ctx.textAlign="center"; ctx.textBaseline="bottom";
-    ctx.fillText(barMi>=1? (barMi+" mi") : (Math.round(barMi*1760)+" yd"), bx+barPx/2, by-6);
-
-    ctx.font='700 11px "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
-    ctx.textAlign="left"; ctx.textBaseline="top";
-    ctx.fillText("N", 18, 16);
-    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(22,52); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(22,34); ctx.lineTo(18,40); ctx.lineTo(26,40); ctx.closePath(); ctx.fill();
-  }
-  function setStatus(s){
-    var place=document.getElementById("statplace");
-    var size=document.getElementById("statsize");
-    var hex=document.getElementById("stathex");
-    if(!s){
-      place.innerHTML="<b>Place</b> —";
-      size.innerHTML="<b>Size</b> —";
-      hex.innerHTML="<b>Hexes</b> —";
-      return;
-    }
-    place.innerHTML="<b>Place</b> "+s.id+" · "+s.name;
-    size.innerHTML="<b>Size</b> "+s.hex.miW.toFixed(2)+" × "+s.hex.miH.toFixed(2)+" mi";
-    hex.innerHTML="<b>Hexes</b> "+s.hex.cols+" × "+s.hex.rows+" · "+YDS+" yd/hex";
+.hex.rows+" · "+YDS+" yd/hex";
   }
 
   cv.addEventListener("pointerdown", function(ev){
@@ -100,3 +75,37 @@ strokeStyle="#2c2214"; ctx.fillStyle="#2c2214"; ctx.lineWidth=1.4;
       [-76.68, 37.16]
     ], 3);
     setStatus(s);
+  }
+  document.getElementById("fityt").onclick=fitYorktown;
+  document.getElementById("fitpr").onclick=function(){
+    var s=SHEETS.filter(function(x){ return x.id==="PR-00"; })[0];
+    /* Port Royal on the Rappahannock; show the run to Chesapeake water shared with the Potomac. */
+    fitLonlats([
+      [-77.30, 38.24],
+      [-76.18, 37.55],
+      [-76.16, 38.08],
+      [-77.10, 38.42]
+    ], 6);
+    setStatus(s);
+  };
+  document.getElementById("fitlf").onclick=function(){
+    fitLonlats([[-78.72, 38.86],[-78.60, 38.78]], 0.8);
+  };
+  document.getElementById("zoomin").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.25); };
+  document.getElementById("zoomout").onclick=function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.25); };
+
+  var HASH_FITS={
+    lf:[[-78.72,38.86],[-78.60,38.78]],
+    ohio:[[-88.75,38.00],[-87.70,36.90]],
+    cairo:[[-89.45,37.25],[-88.85,36.80]],
+    missouri:[[-90.40,38.95],[-90.05,38.50]],
+    illinois:[[-90.75,39.15],[-90.25,38.80]],
+    mobile:[[-88.35,30.85],[-87.70,30.10]],
+    delta:[[-90.55,30.15],[-88.90,28.85]],
+    north:[[-100.2,43.55],[-70.8,42.85]],
+    yt:[[-76.80,37.50],[-76.26,36.93],[-76.20,37.28],[-76.68,37.16]]
+  };
+  function applyHashFit(){
+    var key=(location.hash+location.search).replace(/[#?&=]/g,"").toLowerCase();
+    if(key==="yt"){ fitYorktown(); return; }
+   
