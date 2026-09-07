@@ -17,7 +17,7 @@
   ];
   async function loadFrom(base){
     var parts=await Promise.all(Array.from({length:n},function(_,i){
-      return fetch(base+"chunk-"+i+".txt?v=yt2",{cache:"no-store"}).then(function(r){
+      return fetch(base+"chunk-"+i+".txt?v=yt3",{cache:"no-store"}).then(function(r){
         if(!r.ok) throw new Error("chunk "+i);
         return r.text();
       });
