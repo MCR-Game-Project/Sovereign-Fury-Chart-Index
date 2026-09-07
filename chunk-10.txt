@@ -1,4 +1,27 @@
-pts.length;i++){
+_SCALE, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
+    draw();
+  }
+  function hitSheet(sx, sy){
+    var i, r, d, best=null, bestD=1e9;
+    for(i=SHEETS.length-1;i>=0;i--){
+      r=sheetDisplayRect(SHEETS[i]);
+      if(sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h){
+        d=Math.hypot(sx-(r.x+r.w/2), sy-(r.y+r.h/2));
+        if(d<bestD){ bestD=d; best=SHEETS[i]; }
+      }
+    }
+    if(best) return best;
+    for(i=0;i<SHEETS.length;i++){
+      r=sheetDisplayRect(SHEETS[i]);
+      d=Math.hypot(sx-(r.x+r.w/2), sy-(r.y+r.h/2));
+      if(d<20 && d<bestD){ bestD=d; best=SHEETS[i]; }
+    }
+    return best;
+  }
+  function drawPath(pts, close){
+    var i, p, s;
+    ctx.beginPath();
+    for(i=0;i<pts.length;i++){
       p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
       if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
     }
@@ -94,25 +117,4 @@ pts.length;i++){
   function drawStationHex(ps){
     var rad=Math.max(18, HEX_MI*cam.scale*0.52);
     ctx.save();
-    ctx.strokeStyle="rgba(44,34,20,.45)";
-    ctx.lineWidth=0.9;
-    ctx.setLineDash([3, 2.4]);
-    hexPoly(ps.x, ps.y, rad);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-  function drawStations(){
-    var i, st, pw, ps, res, n, rowW, x0, y0, k, nameX;
-    if(cam.scale<6) return;
-    ctx.save();
-    for(i=0;i<STATIONS.length;i++){
-      st=STATIONS[i];
-      pw=lonlatToWorld(st.lon, st.lat);
-      ps=worldToScreen(pw.x, pw.y);
-      if(ps.x<-80||ps.x>stage.clientWidth+80||ps.y<-40||ps.y>stage.clientHeight+40) continue;
-      drawStationHex(ps);
-      res=st.res||[];
-      n=res.length;
-      rowW=n? n*ICON+(n-1)*ICON_GAP : 0;
-      ctx.font='italic 13px "Iowan Old Style","Palatino Linotype
+    ctx.strokeStyle="rg
