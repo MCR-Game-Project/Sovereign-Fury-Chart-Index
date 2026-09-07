@@ -1,4 +1,19 @@
-me:"Caroline Furnace", lon:-78.548, lat:38.548, res:["charcoal","iron-ore"]},
+ lat:37.92, z:2.0},
+    {name:"York R.", lon:-76.62, lat:37.34, z:2.4},
+    {name:"James R.", lon:-76.92, lat:37.20, z:2.4},
+    {name:"Hampton Roads", lon:-76.32, lat:36.96, z:2.2}
+  ];
+  /* Resource chips sit flush to the station name — no reserved empty icon column. */
+  var ICON_GAP=1, NAME_GAP=0, ICON=14;
+  var RES_CHIP={
+    charcoal:{border:"#2f6b3a", ink:"#2a2418"},
+    "iron-ore":{border:"#8a2a22", ink:"#2a2418"},
+    "pig-iron":{border:"#8a2a22", ink:"#2a2418"}
+  };
+  var STATIONS=[
+    {name:"Liberty Furnace", lon:-78.663, lat:38.821, res:["charcoal","iron-ore","iron-ore"]},
+    {name:"Columbia Furnace", lon:-78.636, lat:38.870, res:["charcoal","iron-ore","pig-iron"]},
+    {name:"Caroline Furnace", lon:-78.548, lat:38.548, res:["charcoal","iron-ore"]},
     {name:"Sherando", lon:-78.951, lat:37.988, res:["charcoal","iron-ore","pig-iron"]}
   ];
 
@@ -81,27 +96,4 @@ me:"Caroline Furnace", lon:-78.548, lat:38.548, res:["charcoal","iron-ore"]},
     x0-=pad; y0-=pad; x1+=pad; y1+=pad;
     var W=stage.clientWidth, H=stage.clientHeight;
     cam.x=(x0+x1)/2; cam.y=(y0+y1)/2;
-    cam.scale=Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(W/(x1-x0), H/(y1-y0))*0.92));
-    draw();
-  }
-  function hitSheet(sx, sy){
-    var i, r, d, best=null, bestD=1e9;
-    for(i=SHEETS.length-1;i>=0;i--){
-      r=sheetDisplayRect(SHEETS[i]);
-      if(sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h){
-        d=Math.hypot(sx-(r.x+r.w/2), sy-(r.y+r.h/2));
-        if(d<bestD){ bestD=d; best=SHEETS[i]; }
-      }
-    }
-    if(best) return best;
-    for(i=0;i<SHEETS.length;i++){
-      r=sheetDisplayRect(SHEETS[i]);
-      d=Math.hypot(sx-(r.x+r.w/2), sy-(r.y+r.h/2));
-      if(d<20 && d<bestD){ bestD=d; best=SHEETS[i]; }
-    }
-    return best;
-  }
-  function drawPath(pts, close){
-    var i, p, s;
-    ctx.beginPath();
-    for(i=0;i<
+    cam.scale=Math.max(MIN_SCALE, Math.min(MAX
