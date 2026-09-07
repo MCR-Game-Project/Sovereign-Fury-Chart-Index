@@ -1,4 +1,67 @@
-;
+me:"Caroline Furnace", lon:-78.548, lat:38.548, res:["charcoal","iron-ore"]},
+    {name:"Sherando", lon:-78.951, lat:37.988, res:["charcoal","iron-ore","pig-iron"]}
+  ];
+
+  var cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+  var stage=cv.parentElement, dpr=Math.max(1, window.devicePixelRatio||1);
+    var cam={x:0,y:0,scale:8}, hover=null, panning=false, lastPan=null, panMoved=false;
+
+  function resize(){
+    var w=stage.clientWidth, h=stage.clientHeight;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    cv.style.width=w+"px"; cv.style.height=h+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+  function worldToScreen(wx, wy){
+    return {x:(wx-cam.x)*cam.scale+stage.clientWidth/2, y:(cam.y-wy)*cam.scale+stage.clientHeight/2};
+  }
+  function screenToWorld(sx, sy){
+    return {x:cam.x+(sx-stage.clientWidth/2)/cam.scale, y:cam.y-(sy-stage.clientHeight/2)/cam.scale};
+  }
+  function sheetWorld(s){
+    var sw=lonlatToWorld(s.box.w, s.box.s), ne=lonlatToWorld(s.box.e, s.box.n);
+    return {x0:sw.x, y0:sw.y, x1:ne.x, y1:ne.y};
+  }
+  function geoScreenRect(s){
+    var b=sheetWorld(s), a=worldToScreen(b.x0,b.y1), c=worldToScreen(b.x1,b.y0);
+    return {x:Math.min(a.x,c.x), y:Math.min(a.y,c.y), w:Math.abs(c.x-a.x), h:Math.abs(c.y-a.y)};
+  }
+  function expandRect(r, minSide){
+    if(r.w>=minSide && r.h>=minSide) return {x:r.x, y:r.y, w:r.w, h:r.h, grown:false};
+    var aspect=r.w/Math.max(0.001,r.h), w=r.w, h=r.h;
+    if(w<minSide){ w=minSide; h=w/aspect; }
+    if(h<minSide){ h=minSide; w=h*aspect; }
+    return {x:r.x+r.w/2-w/2, y:r.y+r.h/2-h/2, w:w, h:h, grown:true};
+  }
+  function unionRects(rs){
+    var i, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(i=0;i<rs.length;i++){
+      if(rs[i].x<x0) x0=rs[i].x;
+      if(rs[i].y<y0) y0=rs[i].y;
+      if(rs[i].x+rs[i].w>x1) x1=rs[i].x+rs[i].w;
+      if(rs[i].y+rs[i].h>y1) y1=rs[i].y+rs[i].h;
+    }
+    return {x:x0, y:y0, w:x1-x0, h:y1-y0};
+  }
+  function sheetDisplayRect(s){
+    var i, block=[], geos=[], u, e, g, sx, sy;
+    if(PLATE_BLOCK.indexOf(s.id)>=0){
+      for(i=0;i<SHEETS.length;i++) if(PLATE_BLOCK.indexOf(SHEETS[i].id)>=0){
+        block.push(SHEETS[i]);
+        geos.push(geoScreenRect(SHEETS[i]));
+      }
+      u=unionRects(geos);
+      if(u.w<MIN_BLOCK || u.h<MIN_BLOCK){
+        e=expandRect(u, MIN_BLOCK);
+        sx=e.w/Math.max(0.001,u.w); sy=e.h/Math.max(0.001,u.h);
+        for(i=0;i<block.length;i++) if(block[i]===s){
+          g=geos[i];
+          return {x:e.x+(g.x-u.x)*sx, y:e.y+(g.y-u.y)*sy, w:g.w*sx, h:g.h*sy, grown:true};
+        }
+      }
+    }
+    return expandRect(geoScreenRect(s), MIN_PLATE);
   }
   function zoomAt(sx, sy, factor){
     var w=screenToWorld(sx,sy);
@@ -41,83 +104,4 @@
   function drawPath(pts, close){
     var i, p, s;
     ctx.beginPath();
-    for(i=0;i<pts.length;i++){
-      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
-      if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
-    }
-    if(close) ctx.closePath();
-  }
-  function lonlatInPoly(lon, lat, poly){
-    var inside=false, n=poly.length, j=n-1, i, xi, yi, xj, yj;
-    for(i=0;i<n;i++){
-      xi=poly[i][0]; yi=poly[i][1]; xj=poly[j][0]; yj=poly[j][1];
-      if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/(yj-yi+1e-30)+xi)) inside=!inside;
-      j=i;
-    }
-    return inside;
-  }
-  /* Theatre land is clipped at this latitude. River strokes stop on that edge. */
-  var MAP_NORTH=43.4;
-  function clipRiverPts(pts){
-    var out=[], i, a, b, t, p;
-    for(i=0;i<pts.length;i++){
-      p=pts[i];
-      if(p[1]<=MAP_NORTH){
-        if(i && pts[i-1][1]>MAP_NORTH){
-          a=pts[i-1]; b=p;
-          t=(MAP_NORTH-a[1])/(b[1]-a[1]);
-          out.push([a[0]+t*(b[0]-a[0]), MAP_NORTH]);
-        }
-        out.push(p);
-      } else if(i && pts[i-1][1]<=MAP_NORTH){
-        a=pts[i-1]; b=p;
-        t=(MAP_NORTH-a[1])/(b[1]-a[1]);
-        out.push([a[0]+t*(b[0]-a[0]), MAP_NORTH]);
-      }
-    }
-    return out.length? out : pts;
-  }
-  /* River strokes stop at a larger body. A river may run through its own estuary. */
-  var OPEN_WATER_NAMES={"Chesapeake Bay":1,"Hampton Roads":1,"Mobile Bay":1};
-  function riverInLargerWater(name, lon, lat){
-    var i, L, own=name+" estuary";
-    for(i=0;i<LAKES.length;i++){
-      L=LAKES[i];
-      if(L.name===own) continue;
-      if(OPEN_WATER_NAMES[L.name] || / estuary$/.test(L.name)){
-        if(lonlatInPoly(lon, lat, L.pts)) return true;
-      }
-    }
-    return false;
-  }
-  function drawRiver(name, pts){
-    var i, p, s, drawing=false;
-    pts=clipRiverPts(pts);
-    ctx.beginPath();
-    for(i=0;i<pts.length;i++){
-      if(riverInLargerWater(name, pts[i][0], pts[i][1])){
-        if(drawing){ ctx.stroke(); ctx.beginPath(); drawing=false; }
-        continue;
-      }
-      p=lonlatToWorld(pts[i][0], pts[i][1]); s=worldToScreen(p.x,p.y);
-      if(!drawing){ ctx.moveTo(s.x,s.y); drawing=true; }
-      else ctx.lineTo(s.x,s.y);
-    }
-    if(drawing) ctx.stroke();
-  }
-  function roundRect(x, y, w, h, r){
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.arcTo(x+w, y, x+w, y+h, r);
-    ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-  }
-  function drawResChip(x, y, kind){
-    var spec=RES_CHIP[kind]||RES_CHIP["iron-ore"], s=ICON, m=2.2;
-    ctx.save();
-    ctx.fillStyle="#f4ead0";
-    ctx.strokeStyle=spec.border;
-    ctx.lineWidth=1.4;
-    roundRect(x+0.5, y+0.5, s-1, s-1, 
+    for(i=0;i<
