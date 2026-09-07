@@ -15,6 +15,8 @@
   /* Yorktown: adopted 20×20 plate, 2 miles at 176 yd/hex. Port Royal: compact site. */
   var YT=boxFromCenter(-76.5085, 37.2389, 2.00, 2.00);
   var PR=boxFromCenter(-77.1910, 38.1700, 2.00, 1.60);
+  /* Same York used on the national chart and on YT-00. WNW–ESE past Gloucester Point. */
+  var YORK_ESTUARY=[[-76.80,37.545],[-76.70,37.475],[-76.58,37.355],[-76.508,37.251],[-76.43,37.240],[-76.42,37.228],[-76.40,37.222],[-76.42,37.214],[-76.508,37.241],[-76.58,37.325],[-76.70,37.445],[-76.80,37.518]];
 
   function sheetHexes(b){
     var midLat=(b.n+b.s)/2;
@@ -28,7 +30,7 @@
     {id:"FC-00", name:"Falls Church", kind:"plate", box:FC, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/fc-00-chart.jpg"},
     {id:"OA-01", name:"Alexandria South", kind:"plate", box:OA01, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/oa-01-chart.jpg"},
     {id:"OA-02", name:"Springfield", kind:"plate", box:OA02, href:null, fill:"rgba(201,154,69,.22)", img:"underlays/oa-02-chart.jpg"},
-    {id:"YT-00", name:"Yorktown", kind:"site", box:YT, href:null, fill:"rgba(138,51,32,.28)", img:"underlays/yt-00-yorktown.jpg"},
+    {id:"YT-00", name:"Yorktown", kind:"site", box:YT, href:null, fill:"rgba(138,51,32,.28)"},
     {id:"PR-00", name:"Port Royal", kind:"site", box:PR, href:null, fill:"rgba(138,51,32,.28)"}
   ];
   SHEETS.forEach(function(s){ s.hex=sheetHexes(s.box); });
@@ -36,56 +38,52 @@
     s.hex={cols:20, rows:20, miW:2, miH:2};
   });
 
-  /* Adopted YT-00 20×20 (flat-top, odd-q). Same locks as gen-yorktown.js. */
+  /* YT-00 20×20. Water is the national York, not a separate schematic river. */
   var YT_COLS=20, YT_ROWS=20;
-  var YT_TOWN=[[9,6],[10,6],[11,6],[10,7]];
-  var YT_PORT=[[9,5],[10,5],[11,5]];
+  var YT_TOWN=[[8,8],[9,8],[9,9],[10,10]];
+  var YT_PORT=[[8,6],[9,7]];
   var YT_GLO=[[12,0],[13,0],[14,0],[15,0],[13,1],[14,1],[15,1],[16,1]];
-  var YT_HEAVY=[[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[6,6],[6,7],[6,8],[6,9],[6,10],[6,11],[6,12],[6,13]];
-  var YT_LIGHT=[[13,0],[14,0],[15,0],[14,1],[15,1],[2,8],[3,8],[2,9],[3,9],[3,10],[8,10],[8,11],[9,10],[9,11],[12,13],[13,13],[12,14],[13,14]];
-  var YT_CORN=[[9,9],[10,9],[11,9],[2,7],[3,7],[4,7]];
-  var YT_BEAN=[[8,7]];
+  var YT_HEAVY=[[1,10],[1,11],[1,12],[1,13],[1,14],[2,10],[2,11],[2,12],[2,13],[3,11],[3,12],[3,13]];
+  var YT_LIGHT=[[6,12],[6,13],[7,12],[7,13],[12,16],[13,16],[3,8],[4,8]];
+  var YT_CORN=[[8,11],[9,11],[10,12],[3,14],[4,14]];
+  var YT_BEAN=[[7,10]];
   var YT_SET=function(list){
     var o={}, i; for(i=0;i<list.length;i++) o[list[i][0]+","+list[i][1]]=1; return o;
   };
   var YT_TOWN_S=YT_SET(YT_TOWN), YT_PORT_S=YT_SET(YT_PORT), YT_GLO_S=YT_SET(YT_GLO);
   var YT_HEAVY_S=YT_SET(YT_HEAVY), YT_LIGHT_S=YT_SET(YT_LIGHT), YT_CORN_S=YT_SET(YT_CORN), YT_BEAN_S=YT_SET(YT_BEAN);
-  function ytSouthBank(c){
-    if(c<=5) return 4; if(c<=13) return 5; if(c<=16) return 6; return 7;
+  function pipLonlat(lon, lat, poly){
+    var n=poly.length, inside=false, i, x1,y1,x2,y2,xint;
+    for(i=0;i<n;i++){
+      x1=poly[i][0]; y1=poly[i][1];
+      x2=poly[(i+1)%n][0]; y2=poly[(i+1)%n][1];
+      if((y1>lat)!==(y2>lat)){
+        xint=x1+(lat-y1)*(x2-x1)/(y2-y1);
+        if(lon<xint) inside=!inside;
+      }
+    }
+    return inside;
   }
+  function ytHexLonlat(c, r){
+    return {
+      lon:YT.w+(c+0.5)/YT_COLS*(YT.e-YT.w),
+      lat:YT.n-(r+0.5)/YT_ROWS*(YT.n-YT.s)
+    };
+  }
+  function ytIsWater(c, r){
+    var p=ytHexLonlat(c,r);
+    return pipLonlat(p.lon, p.lat, YORK_ESTUARY);
+  }
+  function ytOnLand(h){ return !ytIsWater(h[0], h[1]); }
   function ytCell(c, r){
     var k=c+","+r;
+    if(ytIsWater(c,r) && !YT_GLO_S[k] && !YT_TOWN_S[k] && !YT_PORT_S[k]) return "W";
+    if(YT_TOWN_S[k]||YT_PORT_S[k]) return 60;
     if(YT_GLO_S[k]) return 20;
-    if(YT_TOWN_S[k]) return 60;
-    var sb=ytSouthBank(c);
-    if(r<sb) return "W";
-    if(r===sb) return 0;
-    if(r-sb===1) return 20;
-    if(r>=16) return 20;
+    var p=ytHexLonlat(c,r);
+    if(p.lat>=37.248) return 20;
+    if(p.lat<=37.230) return 20;
     return 40;
   }
   var MIN_PLATE=36, MIN_BLOCK=56;
-  var PLATE_BLOCK=["FC-00","DC-00","OA-02","OA-01"];
-  function plateUrls(file){
-    var name=file.split("/").pop();
-    return [
-      file,
-      "https://cdn.jsdelivr.net/gh/MCR-Game-Project/Sovereign-Fury-Chart-Index@main/"+name+"?v=yt3",
-      "https://raw.githubusercontent.com/MCR-Game-Project/Sovereign-Fury-Chart-Index/main/"+name+"?v=yt3"
-    ];
-  }
-  function loadSheetImage(s){
-    if(!s.img) return;
-    var urls=plateUrls(s.img), i=0, img;
-    function next(){
-      if(i>=urls.length) return;
-      img=new Image();
-      img.onload=function(){ s.plateImg=img; s.plateReady=true; if(cv && cv.width) draw(); };
-      img.onerror=function(){ i++; next(); };
-      img.src=urls[i];
-    }
-    next();
-  }
-  SHEETS.forEach(loadSheetImage);
-  var ytThumb=null;
-  function york
+  var PLA
