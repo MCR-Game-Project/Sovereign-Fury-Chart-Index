@@ -1,14 +1,4 @@
-y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-  }
-  function drawResChip(x, y, kind){
-    var spec=RES_CHIP[kind]||RES_CHIP["iron-ore"], s=ICON, m=2.2;
-    ctx.save();
-    ctx.fillStyle="#f4ead0";
-    ctx.strokeStyle=spec.border;
-    ctx.lineWidth=1.4;
-    roundRect(x+0.5, y+0.5, s-1, s-1, 2.2);
+2.2);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle=spec.ink;
     if(kind==="charcoal"){
@@ -102,7 +92,20 @@ y, r);
     return step;
   }
   function draw(){
-    var W=stage.clientWidth, H=stage.clientHeight, i, s, b, a, c, lab, pin;
+    var W=stage.clientWidth, H=stage.clientHeight, i, s, lab;
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,W,H);
-    ctx.fillS
+    ctx.fillStyle="#7ea0c4";
+    ctx.fillRect(0,0,W,H);
+
+    ctx.fillStyle="#e4d6b0";
+    ctx.strokeStyle="rgba(90,74,48,.22)";
+    ctx.lineWidth=Math.max(0.6, Math.min(1.6, 0.04*cam.scale));
+    ctx.lineJoin="round";
+    for(i=0;i<LAND.length;i++){
+      drawPath(LAND[i].pts, true);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+  
