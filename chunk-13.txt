@@ -1,4 +1,24 @@
-,x1=-1e9,y1=-1e9;
+);
+      draw();
+    }
+  });
+  function endPan(ev){
+    if(panning && ev.type==="pointerup" && !panMoved){
+      var r=cv.getBoundingClientRect(), s=hitSheet(ev.clientX-r.left, ev.clientY-r.top);
+      if(s){ fitSheets([s], 0.35); setStatus(s); }
+    }
+    panning=false; lastPan=null; panMoved=false; cv.classList.remove("panning");
+  }
+  cv.addEventListener("pointerup", endPan);
+  cv.addEventListener("pointercancel", endPan);
+  cv.addEventListener("wheel", function(ev){
+    ev.preventDefault();
+    var r=cv.getBoundingClientRect();
+    zoomAt(ev.clientX-r.left, ev.clientY-r.top, ev.deltaY<0?1.18:1/1.18);
+  }, {passive:false});
+
+  function fitLonlats(pts, pad){
+    var i, p, x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
     for(i=0;i<pts.length;i++){
       p=lonlatToWorld(pts[i][0], pts[i][1]);
       if(p.x<x0) x0=p.x; if(p.y<y0) y0=p.y;
@@ -68,7 +88,7 @@
     yt:[[-76.80,37.50],[-76.26,36.93],[-76.20,37.28],[-76.68,37.16]]
   };
   function applyHashFit(){
-    var key=(location.hash+location.search).replace(/[#?&=]/g,"").toLowerCase();
+    var key=(location.hash||"").replace(/^#/,"").toLowerCase();
     if(key==="yt"){ fitYorktown(); return; }
     if(HASH_FITS[key]) fitLonlats(HASH_FITS[key], 0.6);
     else fitAll();
