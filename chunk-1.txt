@@ -65,10 +65,8 @@
     return inside;
   }
   function ytHexLonlat(c, r){
-    return {
-      lon:YT.w+(c+0.5)/YT_COLS*(YT.e-YT.w),
-      lat:YT.n-(r+0.5)/YT_ROWS*(YT.n-YT.s)
-    };
+    var h=ytHexCenter({box:YT}, c, r);
+    return worldToLonlat(h.x, h.y);
   }
   function ytIsWater(c, r){
     var p=ytHexLonlat(c,r);
@@ -86,4 +84,4 @@
     return 40;
   }
   var MIN_PLATE=36, MIN_BLOCK=56;
-  var PLA
+  var PLATE_BLOCK=["FC-00","DC-00","OA-02
